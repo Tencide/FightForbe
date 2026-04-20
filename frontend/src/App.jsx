@@ -1,12 +1,15 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { AppShell } from './components/AppShell';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import Progress from './pages/Progress';
 import PartnerPlaceholder from './pages/PartnerPlaceholder';
 import NotFound from './pages/NotFound';
 
 function Landing() {
   return (
     <PartnerPlaceholder title="FightForge">
-      Feature pages (home, login, dashboard, workouts, progress) mount here as their branches are merged.
+      Log in and open /progress to log metrics (this branch delivers the Progress UI).
     </PartnerPlaceholder>
   );
 }
@@ -17,13 +20,15 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
-          {/* Feature routes are registered on their respective branches:
-              /            -> feat/frontend-home
-              /login       -> feat/frontend-login
-              /dashboard   -> feat/frontend-athlete-dashboard
-              /workouts    -> feat/frontend-workouts-ui
-              /progress    -> feat/frontend-progress-ui
-          */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppShell />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/progress" element={<Progress />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
