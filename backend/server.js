@@ -2,6 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
+const authRoutes = require('./routes/auth');
+const workoutRoutes = require('./routes/workouts');
+const progressRoutes = require('./routes/progress');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -17,11 +21,11 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'fightforge-api' });
 });
 
-// Feature routes are mounted on their respective branches:
-//   /api/auth      -> feat/backend-auth-api
-//   /api/workouts  -> feat/backend-workout-api
-//   /api/progress  -> feat/backend-progress-api
-//   /api/users, /api/meals, /api/messages -> teammate branches
+app.use('/api/auth', authRoutes);
+app.use('/api/workouts', workoutRoutes);
+app.use('/api/progress', progressRoutes);
+
+// Teammate routes (users, meals, messages) are mounted on Tucker's branches.
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });
