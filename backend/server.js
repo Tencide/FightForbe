@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+
+const authRoutes = require('./routes/auth');
 const workoutRoutes = require('./routes/workouts');
 
 const app = express();
@@ -18,10 +20,10 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'fightforge-api' });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/workouts', workoutRoutes);
 
 // Other feature routes are mounted on their respective branches:
-//   /api/auth      -> feat/backend-auth-api
 //   /api/progress  -> feat/backend-progress-api
 //   /api/users, /api/meals, /api/messages -> teammate branches
 
