@@ -26,6 +26,7 @@ app.use('/api/workouts', workoutRoutes);
 app.use('/api/progress', progressRoutes);
 
 // Teammate routes (users, meals, messages) are mounted on Tucker's branches.
+//   /api/users, /api/meals, /api/messages
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });
