@@ -3,7 +3,8 @@ import { apiFetch } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Icon from '../components/Icon';
 import Modal from '../components/Modal';
-import { getYouTubeEmbedUrl } from '../utils/youtube';
+import YouTubePlayer from '../components/YouTubePlayer';
+import { getYouTubeId } from '../utils/youtube';
 import './pageLayout.css';
 
 const EMPTY_FORM = {
@@ -23,9 +24,11 @@ export default function Workouts() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [filterAthlete, setFilterAthlete] = useState('all');
 
   const canManage = user.role === 'coach' || user.role === 'admin';
+  const isEditing = editingId != null;
 
   useEffect(() => {
     let cancelled = false;
@@ -55,27 +58,50 @@ export default function Workouts() {
 
   const openWorkout = useMemo(() => items.find((w) => w.id === openId) || null, [items, openId]);
 
-  async function createWorkout(e) {
+  function resetForm() {
+    setForm(EMPTY_FORM);
+    setEditingId(null);
+    setShowForm(false);
+  }
+
+  function startEdit(w) {
+    setEditingId(w.id);
+    setForm({
+      title: w.title || '',
+      description: w.description || '',
+      content: w.content || '',
+      videoUrl: w.video_url || '',
+      athleteId: String(w.athlete_id || ''),
+    });
+    setShowForm(true);
+    setError('');
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 0);
+  }
+
+  async function submitForm(e) {
     e.preventDefault();
     setError('');
     setSaving(true);
     try {
-      await apiFetch('/api/workouts', {
-        method: 'POST',
-        body: {
-          title: form.title,
-          description: form.description,
-          content: form.content,
-          videoUrl: form.videoUrl,
-          athleteId: Number(form.athleteId),
-        },
-      });
-      setForm(EMPTY_FORM);
-      setShowForm(false);
+      const body = {
+        title: form.title,
+        description: form.description,
+        content: form.content,
+        videoUrl: form.videoUrl,
+        athleteId: Number(form.athleteId),
+      };
+      if (isEditing) {
+        await apiFetch(`/api/workouts/${editingId}`, { method: 'PUT', body });
+      } else {
+        await apiFetch('/api/workouts', { method: 'POST', body });
+      }
+      resetForm();
       const w = await apiFetch('/api/workouts');
       setItems(w);
     } catch (err) {
-      setError(err.message || 'Could not create workout');
+      setError(err.message || (isEditing ? 'Could not save changes' : 'Could not create workout'));
     } finally {
       setSaving(false);
     }
@@ -88,6 +114,7 @@ export default function Workouts() {
       await apiFetch(`/api/workouts/${id}`, { method: 'DELETE' });
       setItems((prev) => prev.filter((x) => x.id !== id));
       if (openId === id) setOpenId(null);
+      if (editingId === id) resetForm();
     } catch (err) {
       setError(err.message || 'Delete failed');
     }
@@ -109,7 +136,15 @@ export default function Workouts() {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => setShowForm((v) => !v)}
+            onClick={() => {
+              if (showForm) {
+                resetForm();
+              } else {
+                setForm(EMPTY_FORM);
+                setEditingId(null);
+                setShowForm(true);
+              }
+            }}
           >
             <Icon name={showForm ? 'x' : 'plus'} size={16} />
             {showForm ? 'Cancel' : 'New workout'}
@@ -120,8 +155,10 @@ export default function Workouts() {
       {error ? <p className="error" role="alert">{error}</p> : null}
 
       {canManage && showForm ? (
-        <form className="form-card fade-up" onSubmit={createWorkout}>
-          <h2 className="section-title">New workout plan</h2>
+        <form className="form-card fade-up" onSubmit={submitForm}>
+          <h2 className="section-title">
+            {isEditing ? 'Edit workout plan' : 'New workout plan'}
+          </h2>
           <div className="row">
             <label className="label" style={{ flex: '1 1 240px' }}>
               Athlete
@@ -189,17 +226,10 @@ export default function Workouts() {
           </label>
           <div className="cluster">
             <button className="btn btn-primary" type="submit" disabled={saving}>
-              {saving ? 'Saving…' : 'Create workout'}
+              {saving ? 'Saving…' : isEditing ? 'Save changes' : 'Create workout'}
             </button>
-            <button
-              type="button"
-              className="btn btn-subtle"
-              onClick={() => {
-                setForm(EMPTY_FORM);
-                setShowForm(false);
-              }}
-            >
-              Discard
+            <button type="button" className="btn btn-subtle" onClick={resetForm}>
+              {isEditing ? 'Cancel' : 'Discard'}
             </button>
           </div>
         </form>
@@ -245,51 +275,90 @@ export default function Workouts() {
         </div>
       ) : (
         <ul className="list">
-          {filtered.map((w) => (
-            <li key={w.id} className="list-item">
-              <div className="spread">
-                <div style={{ minWidth: 0 }}>
-                  <div className="cluster" style={{ marginBottom: 4 }}>
-                    <strong style={{ fontSize: '1rem' }}>{w.title}</strong>
-                    {w.video_url ? (
-                      <span
-                        className="badge"
-                        style={{ color: 'var(--accent)', borderColor: 'rgba(226,62,87,0.3)' }}
-                        title="Tutorial video attached"
-                      >
-                        ▶ Video
-                      </span>
+          {filtered.map((w) => {
+            const isRowEditing = editingId === w.id;
+            return (
+              <li
+                key={w.id}
+                className="list-item"
+                style={
+                  isRowEditing
+                    ? {
+                        borderColor: 'var(--accent)',
+                        boxShadow: '0 0 0 1px var(--accent)',
+                      }
+                    : undefined
+                }
+              >
+                <div className="spread">
+                  <div style={{ minWidth: 0 }}>
+                    <div className="cluster" style={{ marginBottom: 4 }}>
+                      <strong style={{ fontSize: '1rem' }}>{w.title}</strong>
+                      {w.video_url ? (
+                        <span
+                          className="badge"
+                          style={{
+                            color: 'var(--accent)',
+                            borderColor: 'rgba(226,62,87,0.3)',
+                          }}
+                          title="Tutorial video attached"
+                        >
+                          ▶ Video
+                        </span>
+                      ) : null}
+                      {isRowEditing ? (
+                        <span
+                          className="badge"
+                          style={{
+                            color: 'var(--accent)',
+                            borderColor: 'rgba(226,62,87,0.3)',
+                          }}
+                        >
+                          Editing
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="muted">
+                      For {w.athlete_name || `user #${w.athlete_id}`}
+                    </div>
+                    {w.description ? (
+                      <p style={{ margin: '0.5rem 0 0' }}>{w.description}</p>
                     ) : null}
                   </div>
-                  <div className="muted">
-                    For {w.athlete_name || `user #${w.athlete_id}`}
-                  </div>
-                  {w.description ? (
-                    <p style={{ margin: '0.5rem 0 0' }}>{w.description}</p>
-                  ) : null}
-                </div>
-                <div className="cluster">
-                  <button
-                    type="button"
-                    className="btn btn-subtle btn-sm"
-                    onClick={() => setOpenId(w.id)}
-                  >
-                    Show details
-                  </button>
-                  {canManage ? (
+                  <div className="cluster">
                     <button
                       type="button"
-                      className="btn btn-danger btn-sm"
-                      onClick={() => removeWorkout(w.id)}
-                      title="Delete workout"
+                      className="btn btn-subtle btn-sm"
+                      onClick={() => setOpenId(w.id)}
                     >
-                      <Icon name="trash" size={14} />
+                      Show details
                     </button>
-                  ) : null}
+                    {canManage ? (
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn-subtle btn-sm"
+                          onClick={() => startEdit(w)}
+                          title="Edit workout"
+                        >
+                          <Icon name="edit" size={14} />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => removeWorkout(w.id)}
+                          title="Delete workout"
+                        >
+                          <Icon name="trash" size={14} />
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -299,7 +368,13 @@ export default function Workouts() {
 }
 
 function WorkoutDetailModal({ workout, onClose }) {
-  const embedUrl = workout?.video_url ? getYouTubeEmbedUrl(workout.video_url) : null;
+  const videoId = workout?.video_url ? getYouTubeId(workout.video_url) : null;
+  const [watched, setWatched] = useState(false);
+
+  // Reset the "watched" indicator whenever a new workout is opened.
+  useEffect(() => {
+    setWatched(false);
+  }, [workout?.id]);
 
   return (
     <Modal open={!!workout} onClose={onClose} title={workout?.title || ''} size="lg">
@@ -307,20 +382,26 @@ function WorkoutDetailModal({ workout, onClose }) {
         <>
           <div className="cluster">
             <span className="muted">For {workout.athlete_name || `user #${workout.athlete_id}`}</span>
+            {watched ? (
+              <span
+                className="badge"
+                style={{
+                  color: 'var(--success, #22c55e)',
+                  borderColor: 'rgba(34,197,94,0.35)',
+                }}
+                title="You finished the tutorial video"
+              >
+                ✓ Tutorial watched
+              </span>
+            ) : null}
           </div>
 
           {workout.video_url ? (
-            embedUrl ? (
-              <div className="video-frame">
-                <iframe
-                  src={embedUrl}
-                  title={`${workout.title} tutorial video`}
-                  loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
-              </div>
+            videoId ? (
+              <YouTubePlayer
+                videoId={videoId}
+                onComplete={() => setWatched(true)}
+              />
             ) : (
               <div className="video-fallback">
                 <Icon name="message" size={20} />
