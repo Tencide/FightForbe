@@ -4,38 +4,34 @@ import { AppShell } from './components/AppShell';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Workouts from './pages/Workouts';
 import Progress from './pages/Progress';
-import PartnerPlaceholder from './pages/PartnerPlaceholder';
+import Meals from './pages/Meals';
+import Chat from './pages/Chat';
+import CoachHome from './pages/CoachHome';
+import AdminHome from './pages/AdminHome';
+import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
 function AthleteDashboardGate() {
   const { user } = useAuth();
-  if (user.role !== 'athlete') return <Navigate to="/workouts" replace />;
+  if (user.role === 'coach') return <Navigate to="/coach" replace />;
+  if (user.role === 'admin') return <Navigate to="/admin" replace />;
   return <Dashboard />;
 }
 
-function CoachHomeGate() {
+function CoachOrAdminGate({ children }) {
   const { user } = useAuth();
-  if (user.role !== 'coach') return <Navigate to="/" replace />;
-  return (
-    <PartnerPlaceholder title="Coach dashboard">
-      Tucker's coach dashboard will surface athlete management, assignments, and monitoring tools here. Use{' '}
-      <strong>Workouts</strong> and <strong>Progress</strong> in the navigation to manage data today.
-    </PartnerPlaceholder>
-  );
+  if (user.role === 'athlete') return <Navigate to="/dashboard" replace />;
+  return children;
 }
 
-function AdminHomeGate() {
+function AdminOnlyGate({ children }) {
   const { user } = useAuth();
   if (user.role !== 'admin') return <Navigate to="/" replace />;
-  return (
-    <PartnerPlaceholder title="Admin dashboard">
-      Tucker's admin tools will provide full CRUD over users, meals, and messages. You can still manage workouts and
-      review progress from the navigation bar.
-    </PartnerPlaceholder>
-  );
+  return children;
 }
 
 export default function App() {
@@ -45,14 +41,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route
-            path="/signup"
-            element={
-              <PartnerPlaceholder title="Sign up">
-                Tucker is building the registration experience. Until then, use seeded demo accounts from the README.
-              </PartnerPlaceholder>
-            }
-          />
+          <Route path="/signup" element={<Signup />} />
 
           <Route
             element={
@@ -64,24 +53,25 @@ export default function App() {
             <Route path="/dashboard" element={<AthleteDashboardGate />} />
             <Route path="/workouts" element={<Workouts />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/meals" element={<Meals />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/profile" element={<Profile />} />
             <Route
-              path="/meals"
+              path="/coach"
               element={
-                <PartnerPlaceholder title="Meal plans">
-                  Tucker connects this page to the Meal Plan API for assigned nutrition targets.
-                </PartnerPlaceholder>
+                <CoachOrAdminGate>
+                  <CoachHome />
+                </CoachOrAdminGate>
               }
             />
             <Route
-              path="/chat"
+              path="/admin"
               element={
-                <PartnerPlaceholder title="Chat">
-                  Tucker wires this view to the Messaging API for athlete-coach conversations.
-                </PartnerPlaceholder>
+                <AdminOnlyGate>
+                  <AdminHome />
+                </AdminOnlyGate>
               }
             />
-            <Route path="/coach" element={<CoachHomeGate />} />
-            <Route path="/admin" element={<AdminHomeGate />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

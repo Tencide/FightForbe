@@ -1,3 +1,6 @@
 **/node_modules
 dist
 .env
+DEMO.md
+TA_DEMO_GUIDE.md
+FIGHTFORGE_TASK_SPLIT.md

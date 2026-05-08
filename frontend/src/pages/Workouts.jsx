@@ -1,21 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import Icon from '../components/Icon';
+import Modal from '../components/Modal';
+import { getYouTubeEmbedUrl } from '../utils/youtube';
 import './pageLayout.css';
+
+const EMPTY_FORM = {
+  title: '',
+  description: '',
+  content: '',
+  videoUrl: '',
+  athleteId: '',
+};
 
 export default function Workouts() {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
-  const [expanded, setExpanded] = useState(null);
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    content: '',
-    athleteId: '',
-  });
+  const [openId, setOpenId] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [filterAthlete, setFilterAthlete] = useState('all');
 
   const canManage = user.role === 'coach' || user.role === 'admin';
 
@@ -40,6 +48,13 @@ export default function Workouts() {
 
   const athleteOptions = useMemo(() => users, [users]);
 
+  const filtered = useMemo(() => {
+    if (filterAthlete === 'all' || !canManage) return items;
+    return items.filter((w) => String(w.athlete_id) === String(filterAthlete));
+  }, [items, filterAthlete, canManage]);
+
+  const openWorkout = useMemo(() => items.find((w) => w.id === openId) || null, [items, openId]);
+
   async function createWorkout(e) {
     e.preventDefault();
     setError('');
@@ -51,10 +66,12 @@ export default function Workouts() {
           title: form.title,
           description: form.description,
           content: form.content,
+          videoUrl: form.videoUrl,
           athleteId: Number(form.athleteId),
         },
       });
-      setForm({ title: '', description: '', content: '', athleteId: '' });
+      setForm(EMPTY_FORM);
+      setShowForm(false);
       const w = await apiFetch('/api/workouts');
       setItems(w);
     } catch (err) {
@@ -70,119 +87,287 @@ export default function Workouts() {
     try {
       await apiFetch(`/api/workouts/${id}`, { method: 'DELETE' });
       setItems((prev) => prev.filter((x) => x.id !== id));
-      if (expanded === id) setExpanded(null);
+      if (openId === id) setOpenId(null);
     } catch (err) {
       setError(err.message || 'Delete failed');
     }
   }
 
   return (
-    <div className="stack">
-      <h1 className="page-title">Workouts</h1>
-      <p className="page-lead">
-        {canManage
-          ? 'Plans for athletes you work with. Create assignments below.'
-          : 'Plans assigned to you by your coach or admin.'}
-      </p>
-      {error ? (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      ) : null}
+    <div className="stack fade-up">
+      <header className="page-header with-actions">
+        <div>
+          <p className="eyebrow">Workouts</p>
+          <h1 className="page-title">Training plans</h1>
+          <p className="page-lead">
+            {canManage
+              ? 'Build, assign, and tweak plans for your athletes. Click a plan to see details and the tutorial video.'
+              : 'Plans assigned to you by your coach. Click a plan to see details and watch the tutorial.'}
+          </p>
+        </div>
+        {canManage ? (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setShowForm((v) => !v)}
+          >
+            <Icon name={showForm ? 'x' : 'plus'} size={16} />
+            {showForm ? 'Cancel' : 'New workout'}
+          </button>
+        ) : null}
+      </header>
 
-      {canManage ? (
-        <form className="form" style={{ maxWidth: 520 }} onSubmit={createWorkout}>
-          <h2 className="page-title" style={{ fontSize: '1.1rem' }}>
-            New workout
-          </h2>
-          <label className="label">
-            Athlete
-            <select
-              className="select"
-              required
-              value={form.athleteId}
-              onChange={(e) => setForm((f) => ({ ...f, athleteId: e.target.value }))}
-            >
-              <option value="">Select athlete…</option>
-              {athleteOptions.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.full_name} (#{a.id})
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="label">
-            Title
-            <input
-              className="input"
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              required
-            />
-          </label>
+      {error ? <p className="error" role="alert">{error}</p> : null}
+
+      {canManage && showForm ? (
+        <form className="form-card fade-up" onSubmit={createWorkout}>
+          <h2 className="section-title">New workout plan</h2>
+          <div className="row">
+            <label className="label" style={{ flex: '1 1 240px' }}>
+              Athlete
+              <select
+                className="select"
+                required
+                value={form.athleteId}
+                onChange={(e) => setForm((f) => ({ ...f, athleteId: e.target.value }))}
+              >
+                <option value="">Select athlete…</option>
+                {athleteOptions.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.full_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="label" style={{ flex: '2 1 320px' }}>
+              Title
+              <input
+                className="input"
+                placeholder="e.g. Striking — Week 2"
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                required
+              />
+            </label>
+          </div>
           <label className="label">
             Summary
             <input
               className="input"
+              placeholder="One-liner shown in the list"
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </label>
           <label className="label">
-            Details (sets, rounds, notes)
+            Tutorial video URL <span className="dim">(optional)</span>
+            <input
+              className="input"
+              type="url"
+              placeholder="https://www.youtube.com/watch?v=…"
+              value={form.videoUrl}
+              onChange={(e) => setForm((f) => ({ ...f, videoUrl: e.target.value }))}
+            />
+            <span className="muted" style={{ fontSize: '0.75rem' }}>
+              YouTube full URL, short link, embed link, or video ID — all accepted.
+            </span>
+          </label>
+          <label className="label">
+            Session details
             <textarea
               className="textarea"
+              placeholder={
+                'Full breakdown — sets, rounds, drills.\n' +
+                'Example:\n' +
+                '- 10 min jump rope\n' +
+                '- 4×3 heavy bag\n' +
+                '- 3 rounds shadow boxing'
+              }
               value={form.content}
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
             />
           </label>
-          <button className="btn btn-primary" type="submit" disabled={saving}>
-            {saving ? 'Saving…' : 'Create workout'}
-          </button>
+          <div className="cluster">
+            <button className="btn btn-primary" type="submit" disabled={saving}>
+              {saving ? 'Saving…' : 'Create workout'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-subtle"
+              onClick={() => {
+                setForm(EMPTY_FORM);
+                setShowForm(false);
+              }}
+            >
+              Discard
+            </button>
+          </div>
         </form>
       ) : null}
 
-      <ul className="list">
-        {items.length === 0 ? (
-          <li className="muted">No workouts yet.</li>
-        ) : (
-          items.map((w) => (
+      {canManage && athleteOptions.length > 0 ? (
+        <div className="cluster">
+          <span className="muted">Filter:</span>
+          <button
+            className={`tab ${filterAthlete === 'all' ? 'is-active' : ''}`}
+            onClick={() => setFilterAthlete('all')}
+            type="button"
+          >
+            All ({items.length})
+          </button>
+          {athleteOptions.map((a) => {
+            const count = items.filter((w) => w.athlete_id === a.id).length;
+            return (
+              <button
+                key={a.id}
+                type="button"
+                className={`tab ${String(filterAthlete) === String(a.id) ? 'is-active' : ''}`}
+                onClick={() => setFilterAthlete(a.id)}
+              >
+                {a.full_name} ({count})
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {filtered.length === 0 ? (
+        <div className="empty">
+          <span className="empty-icon">
+            <Icon name="dumbbell" size={20} />
+          </span>
+          <h3>No workouts to show</h3>
+          <p>
+            {canManage
+              ? 'Create your first workout plan above to get started.'
+              : 'Your coach has not assigned any plans yet.'}
+          </p>
+        </div>
+      ) : (
+        <ul className="list">
+          {filtered.map((w) => (
             <li key={w.id} className="list-item">
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-                <div>
-                  <strong>{w.title}</strong>
-                  <div className="muted" style={{ marginTop: '0.25rem' }}>
+              <div className="spread">
+                <div style={{ minWidth: 0 }}>
+                  <div className="cluster" style={{ marginBottom: 4 }}>
+                    <strong style={{ fontSize: '1rem' }}>{w.title}</strong>
+                    {w.video_url ? (
+                      <span
+                        className="badge"
+                        style={{ color: 'var(--accent)', borderColor: 'rgba(226,62,87,0.3)' }}
+                        title="Tutorial video attached"
+                      >
+                        ▶ Video
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="muted">
                     For {w.athlete_name || `user #${w.athlete_id}`}
                   </div>
-                  {w.description ? <p style={{ margin: '0.5rem 0 0' }}>{w.description}</p> : null}
+                  {w.description ? (
+                    <p style={{ margin: '0.5rem 0 0' }}>{w.description}</p>
+                  ) : null}
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                  <button type="button" className="btn btn-ghost" onClick={() => setExpanded(expanded === w.id ? null : w.id)}>
-                    {expanded === w.id ? 'Hide' : 'Details'}
+                <div className="cluster">
+                  <button
+                    type="button"
+                    className="btn btn-subtle btn-sm"
+                    onClick={() => setOpenId(w.id)}
+                  >
+                    Show details
                   </button>
                   {canManage ? (
-                    <button type="button" className="btn btn-danger" onClick={() => removeWorkout(w.id)}>
-                      Delete
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => removeWorkout(w.id)}
+                      title="Delete workout"
+                    >
+                      <Icon name="trash" size={14} />
                     </button>
                   ) : null}
                 </div>
               </div>
-              {expanded === w.id && w.content ? (
-                <pre
-                  style={{
-                    margin: '0.75rem 0 0',
-                    whiteSpace: 'pre-wrap',
-                    fontSize: '0.85rem',
-                    color: '#c5cad6',
-                  }}
-                >
-                  {w.content}
-                </pre>
-              ) : null}
             </li>
-          ))
-        )}
-      </ul>
+          ))}
+        </ul>
+      )}
+
+      <WorkoutDetailModal workout={openWorkout} onClose={() => setOpenId(null)} />
     </div>
+  );
+}
+
+function WorkoutDetailModal({ workout, onClose }) {
+  const embedUrl = workout?.video_url ? getYouTubeEmbedUrl(workout.video_url) : null;
+
+  return (
+    <Modal open={!!workout} onClose={onClose} title={workout?.title || ''} size="lg">
+      {!workout ? null : (
+        <>
+          <div className="cluster">
+            <span className="muted">For {workout.athlete_name || `user #${workout.athlete_id}`}</span>
+          </div>
+
+          {workout.video_url ? (
+            embedUrl ? (
+              <div className="video-frame">
+                <iframe
+                  src={embedUrl}
+                  title={`${workout.title} tutorial video`}
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
+            ) : (
+              <div className="video-fallback">
+                <Icon name="message" size={20} />
+                <span>Video URL didn't match a YouTube link.</span>
+                <a
+                  href={workout.video_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-link"
+                >
+                  Open in new tab
+                </a>
+              </div>
+            )
+          ) : null}
+
+          {workout.description ? (
+            <p style={{ margin: 0 }}>{workout.description}</p>
+          ) : null}
+
+          {workout.content ? (
+            <div>
+              <h3 className="section-title" style={{ marginBottom: 'var(--s-2)' }}>
+                Session details
+              </h3>
+              <pre
+                style={{
+                  margin: 0,
+                  whiteSpace: 'pre-wrap',
+                  fontSize: '0.92rem',
+                  color: 'var(--text)',
+                  background: 'var(--bg-2)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--r-md)',
+                  padding: 'var(--s-4) var(--s-5)',
+                  fontFamily: 'var(--font-sans)',
+                  lineHeight: 1.6,
+                }}
+              >
+                {workout.content}
+              </pre>
+            </div>
+          ) : (
+            <p className="muted">No detailed session notes for this plan.</p>
+          )}
+        </>
+      )}
+    </Modal>
   );
 }

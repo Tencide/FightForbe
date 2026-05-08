@@ -1,3 +1,79 @@
+/* ============================================================
+   FightForge — design tokens & global resets
+   ============================================================ */
+
+:root {
+  /* Color system — dark, warm-tinted */
+  --bg-0: #0a0b0e;
+  --bg-1: #11131a;
+  --bg-2: #181b25;
+  --bg-3: #20242f;
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text: #e8eaef;
+  --text-muted: #9aa3b5;
+  --text-dim: #6b7588;
+
+  /* Brand */
+  --brand: #f4b942;
+  --brand-strong: #ffc857;
+  --brand-soft: rgba(244, 185, 66, 0.14);
+  --brand-ring: rgba(244, 185, 66, 0.35);
+
+  --accent: #e23e57;
+  --accent-soft: rgba(226, 62, 87, 0.14);
+
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.14);
+
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.14);
+
+  /* Role accents */
+  --role-athlete: #f4b942;
+  --role-coach: #38bdf8;
+  --role-admin: #a78bfa;
+
+  /* Radii */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* Spacing scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans',
+    sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Menlo', 'Cascadia Mono', 'Liberation Mono',
+    monospace;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 0 1px var(--brand-ring), 0 8px 24px -8px rgba(244, 185, 66, 0.25);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-fast: 120ms;
+  --t-med: 200ms;
+}
+
 *,
 *::before,
 *::after {
@@ -10,18 +86,73 @@ body,
   height: 100%;
 }
 
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans', sans-serif;
-  line-height: 1.45;
-  background: #0c0d10;
-  color: #e8eaef;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg-0);
+  background-image:
+    radial-gradient(1100px 600px at 8% -20%, rgba(244, 185, 66, 0.08) 0%, transparent 55%),
+    radial-gradient(900px 500px at 110% -10%, rgba(56, 189, 248, 0.06) 0%, transparent 55%),
+    radial-gradient(800px 400px at 50% 120%, rgba(167, 139, 250, 0.05) 0%, transparent 50%);
+  background-attachment: fixed;
 }
 
 a {
-  color: #f4b942;
+  color: var(--brand);
+  text-decoration: none;
+  transition: color var(--t-fast) var(--ease);
 }
 
 a:hover {
-  color: #ffd478;
+  color: var(--brand-strong);
+}
+
+::selection {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Scrollbar (webkit) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
 }

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   full_name VARCHAR(120) NOT NULL,
   role ENUM('athlete', 'coach', 'admin') NOT NULL DEFAULT 'athlete',
   coach_id INT UNSIGNED NULL,
+  profile JSON DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_users_coach FOREIGN KEY (coach_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS workouts (
   title VARCHAR(200) NOT NULL,
   description TEXT,
   content TEXT,
+  video_url VARCHAR(500) DEFAULT NULL,
   athlete_id INT UNSIGNED NOT NULL,
   created_by INT UNSIGNED NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -38,7 +38,24 @@ Demo logins:
 - `coach@fightforge.test` — coach  
 - `athlete@fightforge.test` — athlete (assigned to the demo coach)
 
-## Run locally
+## Run with Docker (recommended)
+
+If you have Docker Desktop installed, the entire stack (MySQL + API + frontend) starts with one command:
+
+```bash
+docker compose up --build
+```
+
+- MySQL is initialized from `backend/database/schema.sql` on first run.
+- The backend auto-seeds demo accounts on every start (idempotent).
+- Frontend dev server: <http://127.0.0.1:5173>
+- API health: <http://127.0.0.1:5000/api/health>
+
+Stop everything: `docker compose down`. To wipe the database too: `docker compose down -v`.
+
+No `.env` file is needed for Docker — credentials are wired in `docker-compose.yml`. The MySQL data persists in a named volume between runs.
+
+## Run locally (without Docker)
 
 **Terminal 1 — API**
 
@@ -75,3 +92,8 @@ Open the printed Vite URL (usually `http://127.0.0.1:5173`). The dev server prox
 
 - Signup, meals, chat, coach home, and admin CRUD UIs are stubs until Tucker’s frontend and the messages route are merged.
 - Production deployment (HTTPS, env hardening, hosting) is out of scope for the class demo.
+
+## Demo walkthrough
+
+- [`docs/DEMO.md`](docs/DEMO.md) — full run/setup reference (paths, API smoke tests, troubleshooting, branch tour).
+- [`docs/TA_DEMO_GUIDE.md`](docs/TA_DEMO_GUIDE.md) — live 5–7 min presentation script for the TA demo.
