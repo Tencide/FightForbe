@@ -1,0 +1,69 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: fightforge-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: fightforge
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    # Use TCP (not socket) so we wait for the *real* server, not the
+    # temp socket-only server that runs during first-init schema bootstrap.
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "3306",
+         "--protocol=tcp", "-uroot", "-prootpw"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: fightforge-backend
+    restart: unless-stopped
+    environment:
+      PORT: 5000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: rootpw
+      DB_NAME: fightforge
+      JWT_SECRET: dev-only-change-me
+      CORS_ORIGIN: http://127.0.0.1:5173
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Seed is idempotent — safe to run on every start
+    command: sh -c "node scripts/seed.js && node server.js"
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: fightforge-frontend
+    restart: unless-stopped
+    environment:
+      VITE_PROXY_TARGET: http://backend:5000
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+
+volumes:
+  db_data:
+  backend_node_modules:
+  frontend_node_modules:
