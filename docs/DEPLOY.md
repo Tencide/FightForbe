@@ -48,19 +48,21 @@ use for the backend (so they share a private network and you pay one bill).
 2. Railway will detect the repo. Set **Root Directory** to `backend`.
 3. Railway will use the `Dockerfile` automatically. If not, set the start
    command to `node scripts/seed.js && node server.js`.
-4. **Variables** tab — set every one of these:
+4. Open the **Variables** tab on the **backend** service (not MySQL). Add each row below (Railway: **+ New Variable**). For `DB_*`, use **Add Reference** and pick your **MySQL** service so the value becomes `${{MySQL.MYSQLHOST}}` etc. Your MySQL plugin must be named **`MySQL`** for those names to match; if you renamed it, use Railway’s variable picker instead of typing manually.
 
-   ```
-   NODE_ENV=production
-   PORT=5000
-   DB_HOST=${{MySQL.MYSQLHOST}}
-   DB_PORT=${{MySQL.MYSQLPORT}}
-   DB_USER=${{MySQL.MYSQLUSER}}
-   DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
-   DB_NAME=${{MySQL.MYSQLDATABASE}}
-   JWT_SECRET=<paste your generated secret here>
-   CORS_ORIGIN=https://<your-vercel-app>.vercel.app
-   ```
+   | Name | Value |
+   |------|--------|
+   | `NODE_ENV` | `production` |
+   | `PORT` | `5000` |
+   | `DB_HOST` | `${{MySQL.MYSQLHOST}}` |
+   | `DB_PORT` | `${{MySQL.MYSQLPORT}}` |
+   | `DB_USER` | `${{MySQL.MYSQLUSER}}` |
+   | `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
+   | `DB_NAME` | `${{MySQL.MYSQLDATABASE}}` |
+   | `JWT_SECRET` | *(one long random string — generate locally; never commit)* |
+   | `CORS_ORIGIN` | `https://YOUR-APP.vercel.app` *(your real Vercel production URL; comma-separate if you add preview URLs later)* |
+
+   If you applied **`schema.railway.sql`** with `USE railway;` and never changed `MYSQLDATABASE`, **`DB_NAME`** can stay `${{MySQL.MYSQLDATABASE}}` (usually `railway`).
 
    The `${{MySQL.VAR}}` references auto-link to the MySQL service Railway
    provisioned above.
@@ -96,12 +98,12 @@ variables UI only.
    - **Framework Preset**: Vite (auto-detected)
    - **Build Command**: `npm run build` (default)
    - **Output Directory**: `dist` (default)
-4. **Environment Variables**:
+4. **Environment variables** — add each row (Production **and** Preview if you use branch deploys):
 
-   | Name | Value | Notes |
-   | --- | --- | --- |
-   | `VITE_API_BASE` | `https://<your-railway-api>.up.railway.app` | Required |
-   | `VITE_SHOW_DEMO_ACCOUNTS` | _(leave unset, or set to `false`)_ | Hides sample-account quick-fill on Login and the sample-credentials callout on Home. Keep `false` on any public URL. |
+   | Name | Value |
+   |------|--------|
+   | `VITE_API_BASE` | `https://YOUR-API.up.railway.app` *(same origin Railway shows after **Generate Domain**; no `/api` suffix)* |
+   | `VITE_SHOW_DEMO_ACCOUNTS` | `false` *(recommended for public sites)* |
 
 5. Click **Deploy**. First build takes ~30s. You'll get a URL like
    `https://fightforge.vercel.app`.
