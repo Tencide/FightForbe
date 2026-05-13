@@ -32,12 +32,14 @@ Put the same **`DB_HOST`**, **`DB_PORT`**, **`DB_USER`**, **`DB_PASSWORD`**, **`
 
 ## Prerequisites
 
-1. Install the Fly CLI: [Install flyctl](https://fly.io/docs/hands-on/install-flyctl/).
-2. Sign up / log in: `fly auth login`.
+1. Install the Fly CLI: [Install flyctl](https://fly.io/docs/hands-on/install-flyctl/). On Windows it lands in **`%USERPROFILE%\.fly\bin`** — add that folder to your **PATH**, then open a **new** terminal. Use the **`flyctl`** command (or full path `"%USERPROFILE%\.fly\bin\flyctl.exe"`). If `fly` is “not recognized”, PATH was not updated yet.
+2. Sign up / log in: `flyctl auth login`.
 3. A **MySQL 8+** database with schema applied (`backend/database/schema.sql` or `schema.single_mysql_database.sql`).
 4. A strong **`JWT_SECRET`** (e.g. `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`).
 
 ---
+
+**Windows:** use **`flyctl`** for every command below (`flyctl launch`, `flyctl deploy`, …) if **`fly`** is not recognized — see Prerequisites.
 
 ## 1. Create the app from `backend/`
 
