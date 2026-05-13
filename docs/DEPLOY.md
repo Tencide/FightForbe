@@ -14,6 +14,8 @@ The frontend does **not** run the API or the database; it only talks to your API
 
 ## 1. MySQL
 
+Pick any host that gives you **MySQL 8+** over the network (managed DB, cloud RDS, etc.). If the API runs on **Fly.io**, the DB must accept connections from the internet (or a private link you configure). Examples and firewall notes: **[`docs/FLY.md`](FLY.md)** (“Where to host MySQL”).
+
 1. Create a MySQL 8+ instance and a **database** (name it e.g. `fightforge`, or note whatever name your provider assigns).
 2. Apply the schema:
    - **Fresh database you control:** run `backend/database/schema.sql` (creates the `fightforge` database) **or** run `backend/database/schema.single_mysql_database.sql` after changing the first `USE …` line to your database name.

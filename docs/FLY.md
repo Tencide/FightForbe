@@ -4,6 +4,32 @@ This walks through hosting **`backend/`** (Express + Docker) on [Fly.io](https:/
 
 ---
 
+## Where to host MySQL
+
+Fly runs your API in their cloud; it connects to MySQL over the **public internet** (unless you wire a private network). You need **any MySQL 8+** host that gives you:
+
+- hostname (e.g. `something.db.provider.com`)
+- port (often **3306**)
+- user / password
+- a database name
+
+**Typical places people put it:**
+
+| Kind | Examples |
+|------|-----------|
+| Managed MySQL (easiest) | [Aiven MySQL](https://aiven.io/mysql), [DigitalOcean Managed Databases](https://www.digitalocean.com/products/managed-databases), [AWS RDS MySQL](https://aws.amazon.com/rds/mysql/), [Google Cloud SQL](https://cloud.google.com/sql/docs/mysql), [Azure Database for MySQL](https://azure.microsoft.com/products/mysql/) |
+| App-platform add-ons | Many PaaS dashboards offer “MySQL” as an addon — create it there and copy **host / port / user / password** into Fly secrets as **`DB_*`**. |
+
+**“Reachable from Fly”** means: from the internet, clients can open a TCP connection to that host on the DB port. In your provider’s firewall / IP allowlist, either allow **all** origins (simplest for learning) or follow their docs for **Fly.io egress** if they require IP allowlisting (Fly’s outbound IPs can change — managed DBs often use hostname + password only).
+
+**Apply the schema** using:
+
+- the provider’s **SQL / console / query** UI — paste **`backend/database/schema.sql`** *or* **`backend/database/schema.single_mysql_database.sql`** (use the second file if the provider already created **one** database for you and does not allow `CREATE DATABASE`; edit the first `USE …` line to match their DB name).
+
+Put the same **`DB_HOST`**, **`DB_PORT`**, **`DB_USER`**, **`DB_PASSWORD`**, **`DB_NAME`** into Fly (`fly secrets set …`) as in the section below.
+
+---
+
 ## Prerequisites
 
 1. Install the Fly CLI: [Install flyctl](https://fly.io/docs/hands-on/install-flyctl/).
