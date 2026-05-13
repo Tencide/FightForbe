@@ -11,6 +11,8 @@ The app is three pieces. They go in three different places.
 Vercel is the right home for the frontend only. It will not host the Express
 server or the database.
 
+Optional **Firebase Authentication** (client sign-in + server token exchange) is documented in **[`FIREBASE.md`](FIREBASE.md)**; the default remains email/password against the Express API only.
+
 ---
 
 ## 1. Deploy the database

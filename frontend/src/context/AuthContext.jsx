@@ -1,6 +1,12 @@
 /* eslint-disable react-refresh/only-export-components -- context + hook module */
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+} from 'firebase/auth';
 import { apiFetch, getToken, setToken } from '../api/client';
+import { getFirebaseAuth, isFirebaseAuthEnabled } from '../firebase/client';
 
 const AuthContext = createContext(null);
 
@@ -20,18 +26,87 @@ export function AuthProvider({ children }) {
     else localStorage.removeItem('fightforge_user');
   }, []);
 
-  const login = useCallback(async (email, password) => {
-    const data = await apiFetch('/api/auth/login', {
-      method: 'POST',
-      body: { email, password },
-      token: null,
-    });
-    setToken(data.token);
-    persistUser(data.user);
-    return data.user;
-  }, [persistUser]);
+  const login = useCallback(
+    async (email, password) => {
+      if (isFirebaseAuthEnabled()) {
+        const auth = getFirebaseAuth();
+        if (!auth) throw new Error('Firebase Auth is not configured');
+        try {
+          const cred = await signInWithEmailAndPassword(auth, email, password);
+          const idToken = await cred.user.getIdToken();
+          const data = await apiFetch('/api/auth/firebase-session', {
+            method: 'POST',
+            body: { idToken, fullName: null },
+            token: null,
+          });
+          setToken(data.token);
+          persistUser(data.user);
+          return data.user;
+        } catch (e) {
+          if (e?.code === 'auth/user-not-found') {
+            const data = await apiFetch('/api/auth/login', {
+              method: 'POST',
+              body: { email, password },
+              token: null,
+            });
+            setToken(data.token);
+            persistUser(data.user);
+            return data.user;
+          }
+          throw e;
+        }
+      }
+      const data = await apiFetch('/api/auth/login', {
+        method: 'POST',
+        body: { email, password },
+        token: null,
+      });
+      setToken(data.token);
+      persistUser(data.user);
+      return data.user;
+    },
+    [persistUser]
+  );
 
-  const logout = useCallback(() => {
+  const signup = useCallback(
+    async ({ fullName, email, password }) => {
+      if (isFirebaseAuthEnabled()) {
+        const auth = getFirebaseAuth();
+        if (!auth) throw new Error('Firebase Auth is not configured');
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        const idToken = await cred.user.getIdToken();
+        const data = await apiFetch('/api/auth/firebase-session', {
+          method: 'POST',
+          body: { idToken, fullName },
+          token: null,
+        });
+        setToken(data.token);
+        persistUser(data.user);
+        return data.user;
+      }
+      const data = await apiFetch('/api/auth/signup', {
+        method: 'POST',
+        body: { fullName, email, password },
+        token: null,
+      });
+      setToken(data.token);
+      persistUser(data.user);
+      return data.user;
+    },
+    [persistUser]
+  );
+
+  const logout = useCallback(async () => {
+    if (isFirebaseAuthEnabled()) {
+      const auth = getFirebaseAuth();
+      if (auth) {
+        try {
+          await firebaseSignOut(auth);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
     setToken(null);
     persistUser(null);
   }, [persistUser]);
@@ -49,10 +124,12 @@ export function AuthProvider({ children }) {
       token: getToken(),
       isAuthenticated: Boolean(getToken() && user),
       login,
+      signup,
       logout,
       refreshProfile,
+      firebaseAuthEnabled: isFirebaseAuthEnabled(),
     }),
-    [user, login, logout, refreshProfile]
+    [user, login, signup, logout, refreshProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

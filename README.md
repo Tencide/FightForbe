@@ -22,6 +22,8 @@ mysql -u root -p < backend/database/schema.sql
 
 Copy `backend/.env.example` to `backend/.env` and set `DB_*`, `JWT_SECRET`, and (for production) `CORS_ORIGIN`.
 
+Optional **Firebase Authentication** (email/password via Google, then sync to MySQL): see **[`docs/FIREBASE.md`](docs/FIREBASE.md)**.
+
 ### Optional: sample users for local development
 
 After the schema exists, you can load **optional sample accounts** (same password for all three):

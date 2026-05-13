@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { apiFetch, setToken } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Icon from '../components/Icon';
 import './pageLayout.css';
 import './AuthLayout.css';
 
 export default function Signup() {
-  const { isAuthenticated, user } = useAuth();
+  const { signup, isAuthenticated, user } = useAuth();
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirm: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,17 +32,11 @@ export default function Signup() {
     }
     setLoading(true);
     try {
-      const data = await apiFetch('/api/auth/signup', {
-        method: 'POST',
-        body: {
-          fullName: form.fullName.trim(),
-          email: form.email.trim(),
-          password: form.password,
-        },
-        token: null,
+      await signup({
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        password: form.password,
       });
-      setToken(data.token);
-      localStorage.setItem('fightforge_user', JSON.stringify(data.user));
       window.location.assign('/dashboard');
     } catch (err) {
       let msg = err.message || 'Signup failed';
