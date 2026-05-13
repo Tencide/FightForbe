@@ -67,6 +67,22 @@ use for the backend (so they share a private network and you pay one bill).
    The `${{MySQL.VAR}}` references auto-link to the MySQL service Railway
    provisioned above.
 
+   **Raw Editor (backend service):** Variables → **Raw Editor** → **ENV** tab. Remove any sample lines. Paste **one variable per line** (press Enter between lines — do not type the characters `\` and `n` as text). Replace `PASTE_JWT_SECRET` and `PASTE_VERCEL_HTTPS_ORIGIN`, then **Update Variables**:
+
+   ```env
+   NODE_ENV=production
+   PORT=5000
+   DB_HOST=${{MySQL.MYSQLHOST}}
+   DB_PORT=${{MySQL.MYSQLPORT}}
+   DB_USER=${{MySQL.MYSQLUSER}}
+   DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
+   DB_NAME=${{MySQL.MYSQLDATABASE}}
+   JWT_SECRET=PASTE_JWT_SECRET
+   CORS_ORIGIN=PASTE_VERCEL_HTTPS_ORIGIN
+   ```
+
+   If the MySQL plugin is **not** named `MySQL`, change `MySQL` in each `${{…}}` to match, or use **Add Reference** in the normal Variables list instead of Raw Editor.
+
 5. **Settings** tab → **Generate Domain**. You'll get a URL like
    `https://fightforge-api-production.up.railway.app`. Copy it — you'll need
    it in step 3.
@@ -104,6 +120,13 @@ variables UI only.
    |------|--------|
    | `VITE_API_BASE` | `https://YOUR-API.up.railway.app` *(same origin Railway shows after **Generate Domain**; no `/api` suffix)* |
    | `VITE_SHOW_DEMO_ACCOUNTS` | `false` *(recommended for public sites)* |
+
+   **Raw / `.env` style (Vercel or local reference):** one line per variable, no quotes needed unless the value has spaces.
+
+   ```env
+   VITE_API_BASE=https://YOUR-API.up.railway.app
+   VITE_SHOW_DEMO_ACCOUNTS=false
+   ```
 
 5. Click **Deploy**. First build takes ~30s. You'll get a URL like
    `https://fightforge.vercel.app`.
