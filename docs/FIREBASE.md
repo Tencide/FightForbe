@@ -17,21 +17,21 @@ If you **do not** set the Firebase env vars below, behavior is unchanged: email/
    - **appId** (optional but recommended for the web SDK)
 
 4. **Project settings** → **Service accounts** → **Generate new private key** → download JSON.  
-   You will paste this JSON **as a single line** into Railway (see below). **Never commit** that file to git.
+   You will paste this JSON **as a single line** into your API host’s environment (see below). **Never commit** that file to git.
 
 ---
 
 ## 2. MySQL migration
 
-Existing databases need the `firebase_uid` column (and unique index). Run **once** in Railway MySQL **Data** (or any client):
+Existing databases need the `firebase_uid` column (and unique index). Run **once** in your MySQL client or host’s SQL console:
 
 `backend/database/migration_firebase_auth.sql`
 
-New installs that use **`schema.sql`** / **`schema.railway.sql`** from this repo already include `firebase_uid` and the index.
+New installs that use **`schema.sql`** or **`schema.single_mysql_database.sql`** from this repo already include `firebase_uid` and the index.
 
 ---
 
-## 3. Backend (Railway or local)
+## 3. Backend (production or local)
 
 Add a variable **`FIREBASE_SERVICE_ACCOUNT_JSON`** whose value is the **entire** service account JSON **minified to one line** (no line breaks). Example shape:
 
@@ -39,7 +39,7 @@ Add a variable **`FIREBASE_SERVICE_ACCOUNT_JSON`** whose value is the **entire**
 {"type":"service_account","project_id":"...","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",...}
 ```
 
-Keep `\n` inside `private_key` as in the downloaded file when you stringify, or paste Railway’s “raw JSON” from the file contents.
+Keep `\n` inside `private_key` as in the downloaded file when you stringify, or paste the minified JSON exactly as from the file contents.
 
 Redeploy the API after saving variables.
 

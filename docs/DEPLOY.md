@@ -2,174 +2,104 @@
 
 The app is three pieces. They go in three different places.
 
-| Piece | What it is | Recommended host |
+| Piece | What it is | Typical host |
 | --- | --- | --- |
-| `frontend/` | Vite + React SPA | **Vercel** (free, auto-deploy from GitHub) |
-| `backend/` | Long-running Express API | **Railway** or **Render** (free tier OK) |
-| MySQL | Database | **Railway** add-on or **PlanetScale / Aiven** |
+| `frontend/` | Vite + React SPA | **Vercel**, Netlify, Cloudflare Pages, or any static host |
+| `backend/` | Long-running Express API | **Render**, **Fly.io**, a **VPS**, **Docker** on a VM, **AWS ECS**, etc. |
+| MySQL | Database | **PlanetScale**, **Aiven**, **AWS RDS**, the same VPS as Docker, or any MySQL 8+ |
 
-Vercel is the right home for the frontend only. It will not host the Express
-server or the database.
+The frontend does **not** run the API or the database; it only talks to your API over HTTPS.
 
-Optional **Firebase Authentication** (client sign-in + server token exchange) is documented in **[`FIREBASE.md`](FIREBASE.md)**; the default remains email/password against the Express API only.
-
----
-
-## 1. Deploy the database
-
-The simplest path is to spin up a managed MySQL on the same platform you'll
-use for the backend (so they share a private network and you pay one bill).
-
-### Railway
-
-1. Sign in at <https://railway.app> with GitHub.
-2. **New Project** → **Provision MySQL**.
-3. Once it's running, click the MySQL service → **Variables** tab. Copy:
-   - `MYSQLHOST`
-   - `MYSQLPORT`
-   - `MYSQLUSER`
-   - `MYSQLPASSWORD`
-   - `MYSQLDATABASE` (default: `railway` — change to `fightforge` in the
-     **Settings** tab if you like).
-4. Apply the schema. Open the MySQL service → **Database** → **Data** → paste and run **`backend/database/schema.railway.sql`** (first line must be `USE railway;` — if **`USE railway`** fails with unknown database, open **Variables** on the MySQL service, read **`MYSQLDATABASE`**, and change line 1 to `USE that_name;`).
-   - Paste only from the file: no Markdown fences, no extra text. If Railway reports syntax error at line 1, clear the box and paste again.
-   - Or use **`backend/database/schema.sql`** only if you can create a separate DB named `fightforge` and your app’s `DB_NAME` matches it.
-   - Or use any MySQL client (**Connect** on the MySQL service) with the public proxy host Railway gives you.
-
-> The first time the seed script runs from the backend it will populate optional
-> sample users plus workout/meal library content for development.
+Optional **Firebase Authentication** is in **[`FIREBASE.md`](FIREBASE.md)**. The default is still email/password against your Express API.
 
 ---
 
-## 2. Deploy the backend (Express API)
+## 1. MySQL
 
-### Railway
+1. Create a MySQL 8+ instance and a **database** (name it e.g. `fightforge`, or note whatever name your provider assigns).
+2. Apply the schema:
+   - **Fresh database you control:** run `backend/database/schema.sql` (creates the `fightforge` database) **or** run `backend/database/schema.single_mysql_database.sql` after changing the first `USE …` line to your database name.
+3. Connect with any client (CLI, DBeaver, TablePlus, or a host’s “SQL” UI). Paste the file, execute.
 
-1. In your Railway project: **New Service** → **GitHub Repo** → pick your
-   FightForge fork or upstream repository.
-2. Railway will detect the repo. Set **Root Directory** to `backend`.
-3. Railway will use the `Dockerfile` automatically. If not, set the start
-   command to `node scripts/seed.js && node server.js`.
-4. Open the **Variables** tab on the **backend** service (not MySQL). Add each row below (Railway: **+ New Variable**). For `DB_*`, use **Add Reference** and pick your **MySQL** service so the value becomes `${{MySQL.MYSQLHOST}}` etc. Your MySQL plugin must be named **`MySQL`** for those names to match; if you renamed it, use Railway’s variable picker instead of typing manually.
+> Optional: `cd backend && npm run seed` inserts sample users and library rows (idempotent).
 
-   | Name | Value |
-   |------|--------|
-   | `NODE_ENV` | `production` |
-   | `PORT` | `5000` |
-   | `DB_HOST` | `${{MySQL.MYSQLHOST}}` |
-   | `DB_PORT` | `${{MySQL.MYSQLPORT}}` |
-   | `DB_USER` | `${{MySQL.MYSQLUSER}}` |
-   | `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
-   | `DB_NAME` | `${{MySQL.MYSQLDATABASE}}` |
-   | `JWT_SECRET` | *(one long random string — generate locally; never commit)* |
-   | `CORS_ORIGIN` | `https://YOUR-APP.vercel.app` *(your real Vercel production URL; comma-separate if you add preview URLs later)* |
+---
 
-   If you applied **`schema.railway.sql`** with `USE railway;` and never changed `MYSQLDATABASE`, **`DB_NAME`** can stay `${{MySQL.MYSQLDATABASE}}` (usually `railway`).
+## 2. Deploy the API (Express + `backend/`)
 
-   The `${{MySQL.VAR}}` references auto-link to the MySQL service Railway
-   provisioned above.
+Use any host that can run **Node 20+** and reach MySQL (public host/port + user/password, or private network).
 
-   **Raw Editor (backend service):** Variables → **Raw Editor** → **ENV** tab. Remove any sample lines. Paste **one variable per line** (press Enter between lines — do not type the characters `\` and `n` as text). Replace `PASTE_JWT_SECRET` and `PASTE_VERCEL_HTTPS_ORIGIN`, then **Update Variables**:
+**Docker:** the repo includes `backend/Dockerfile` (`CMD ["node", "server.js"]`). Point your platform at **`backend/`** as the build context.
 
-   ```env
-   NODE_ENV=production
-   PORT=5000
-   DB_HOST=${{MySQL.MYSQLHOST}}
-   DB_PORT=${{MySQL.MYSQLPORT}}
-   DB_USER=${{MySQL.MYSQLUSER}}
-   DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
-   DB_NAME=${{MySQL.MYSQLDATABASE}}
-   JWT_SECRET=PASTE_JWT_SECRET
-   CORS_ORIGIN=PASTE_VERCEL_HTTPS_ORIGIN
-   ```
+**Environment variables** (names are always the same; how you set them depends on the host):
 
-   If the MySQL plugin is **not** named `MySQL`, change `MySQL` in each `${{…}}` to match, or use **Add Reference** in the normal Variables list instead of Raw Editor.
+| Name | Value |
+|------|--------|
+| `NODE_ENV` | `production` |
+| `PORT` | `5000` (or the port your host injects; read `process.env.PORT` in code already) |
+| `DB_HOST` | MySQL hostname |
+| `DB_PORT` | MySQL port (often `3306`) |
+| `DB_USER` | MySQL user |
+| `DB_PASSWORD` | MySQL password |
+| `DB_NAME` | Database name (must match the `USE` / schema you applied) |
+| `JWT_SECRET` | Long random string (`node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`) |
+| `CORS_ORIGIN` | Your frontend origin(s), e.g. `https://your-app.vercel.app` (comma-separated for multiple) |
 
-5. **Settings** tab → **Generate Domain**. You'll get a URL like
-   `https://fightforge-api-production.up.railway.app`. Copy it — you'll need
-   it in step 3.
+Optional **Firebase Admin** (see [`FIREBASE.md`](FIREBASE.md)):
 
-6. Verify the API is up: open `https://<that-url>/api/health` in a browser.
-   You should see `{"ok":true,"service":"fightforge-api"}`.
+`FIREBASE_SERVICE_ACCOUNT_JSON` — single-line service account JSON.
 
-### Generate JWT_SECRET
+**Raw `.env` style** (copy into a host “environment” or “secrets” editor):
 
-If you don't have one yet:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```env
+NODE_ENV=production
+PORT=5000
+DB_HOST=your-mysql-host.example.com
+DB_PORT=3306
+DB_USER=your_user
+DB_PASSWORD=your_password
+DB_NAME=fightforge
+JWT_SECRET=PASTE_JWT_SECRET
+CORS_ORIGIN=https://YOUR-FRONTEND.example.com
 ```
 
-Never commit it. Paste it into your hosting platform's environment
-variables UI only.
+Assign a **public HTTPS URL** to the service (platform “domain” / “URL” / reverse proxy). Test:
+
+`https://<your-api-host>/api/health` → `{"ok":true,"service":"fightforge-api"}`
 
 ---
 
 ## 3. Deploy the frontend (Vercel)
 
-**Important:** In the Vercel project, set **Root Directory** to **`frontend`** (see **[`VERCEL.md`](VERCEL.md)**). Do not leave the root as `.` unless you add your own root `package.json` build.
+**Root Directory** must be **`frontend`** (see **[`VERCEL.md`](VERCEL.md)**).
 
-1. Sign in at <https://vercel.com> with GitHub.
-2. **Add New** → **Project** → **Import** your GitHub repository.
-3. **Configure Project**:
-   - **Root Directory**: **`frontend`** (required)
-   - **Framework Preset**: Vite (auto-detected)
-   - **Build Command**: `npm run build` (default)
-   - **Output Directory**: `dist` (default)
-4. **Environment variables** — add each row (Production **and** Preview if you use branch deploys):
+| Name | Value |
+|------|--------|
+| `VITE_API_BASE` | `https://<your-api-host>` — **origin only**, no `/api` suffix |
+| `VITE_SHOW_DEMO_ACCOUNTS` | `false` for public sites |
 
-   | Name | Value |
-   |------|--------|
-   | `VITE_API_BASE` | `https://YOUR-API.up.railway.app` *(same origin Railway shows after **Generate Domain**; no `/api` suffix)* |
-   | `VITE_SHOW_DEMO_ACCOUNTS` | `false` *(recommended for public sites)* |
+Set `VITE_API_BASE` for **Production** and **Preview** if you use preview deployments. Redeploy after env changes.
 
-   **Raw / `.env` style (Vercel or local reference):** one line per variable, no quotes needed unless the value has spaces.
+**Example `.env` style:**
 
-   ```env
-   VITE_API_BASE=https://YOUR-API.up.railway.app
-   VITE_SHOW_DEMO_ACCOUNTS=false
-   ```
+```env
+VITE_API_BASE=https://api.yourdomain.com
+VITE_SHOW_DEMO_ACCOUNTS=false
+```
 
-5. Click **Deploy**. First build takes ~30s. You'll get a URL like
-   `https://fightforge.vercel.app`.
-
-6. Go back to Railway, edit the backend's `CORS_ORIGIN` variable, and paste
-   the Vercel URL in (replace any placeholder). Railway will redeploy.
-
-7. Open the Vercel URL. If you ran the optional seed script during setup, you can
-   sign in with the sample accounts from `README.md`; otherwise use **Sign up**
-   to create real users.
-
-That's it — every push to `main` on GitHub auto-deploys frontend (Vercel)
-*and* backend (Railway).
+Then set **`CORS_ORIGIN`** on the API to your real Vercel URL(s) and redeploy the API.
 
 ---
 
 ## Common pitfalls
 
-- **CORS errors in the browser console.** Backend's `CORS_ORIGIN` doesn't
-  include your Vercel URL. Update it on Railway and let it redeploy.
-- **`Server error during login`.** Backend can't reach MySQL — verify the
-  `DB_*` variables and check that you ran the schema SQL.
-- **`/workouts` 404s on refresh.** `vercel.json` is missing or malformed.
-  The included one rewrites all non-asset paths to `/index.html`.
-- **Tokens stop working after redeploy.** You changed `JWT_SECRET` between
-  deploys, which invalidates every existing token. Users just need to log
-  in again. Don't rotate it unless you mean to.
-- **Sample data missing.** The seed script only inserts rows that don't
-  already exist (idempotent). If your deploy command runs seed on start, the
-  next boot will refill; otherwise run `node scripts/seed.js` once after applying
-  the schema.
+- **CORS in the browser.** `CORS_ORIGIN` on the API must list the exact frontend origin (`https://…`).
+- **`Server error during login`.** API cannot reach MySQL — check `DB_*` and network/firewall.
+- **SPA 404 on refresh.** Ensure `frontend/vercel.json` (or your host’s equivalent) routes non-file paths to `index.html`.
+- **`JWT_SECRET` changed.** All existing JWTs invalidate; users log in again.
 
 ---
 
-## Alternative: deploy everything on Railway
+## Same host for frontend + API
 
-If you don't want to split between Vercel and Railway, you can put the
-frontend on Railway too. Add a third service pointing at `frontend/` with
-the included `Dockerfile`. Then you don't need `vercel.json` or
-`VITE_API_BASE` — just set up Railway domains for both services and update
-`CORS_ORIGIN` accordingly.
-
-Vercel still wins on free-tier static hosting + global CDN for the SPA,
-which is why the split is the recommendation.
+You can serve the built SPA (`frontend/dist`) and the API from one machine or one PaaS project (e.g. Express `express.static` for `dist`, or two processes behind nginx). Then you may use a **same-origin** `/api` path and skip `VITE_API_BASE`. This repo’s default is still **Vercel + separate API** for a simple CDN static setup.

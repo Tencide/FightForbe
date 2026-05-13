@@ -23,7 +23,7 @@ if (IS_PROD) {
   }
 }
 
-// Behind a load balancer / proxy (Railway, Render, etc.) we need this so
+// Behind a load balancer / proxy (Render, Fly.io, etc.) we need this so
 // req.ip and secure cookies work correctly.
 app.set('trust proxy', 1);
 

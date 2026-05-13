@@ -1,6 +1,6 @@
 # Deploy the FightForge frontend on Vercel
 
-Vercel hosts the **React (Vite) SPA** only. The **Express API** and **MySQL** must run elsewhere (e.g. [Railway](DEPLOY.md) + managed MySQL).
+Vercel hosts the **React (Vite) SPA** only. The **Express API** and **MySQL** must run elsewhere — see **[`DEPLOY.md`](DEPLOY.md)** for typical options (Render, Fly.io, a VPS, managed MySQL, etc.).
 
 You can point the browser at the API in these ways:
 
@@ -12,7 +12,7 @@ You can point the browser at the API in these ways:
 ## Prerequisites
 
 1. Repo pushed to **GitHub** (or GitLab / Bitbucket — Vercel supports those too).
-2. A **public HTTPS URL** for your API, e.g. `https://fightforge-api.up.railway.app`  
+2. A **public HTTPS URL** for your API, e.g. `https://api.yourdomain.com`  
    - No trailing slash (the app normalizes this, but keep it clean).
 3. Backend **`CORS_ORIGIN`** is still a good idea for your Vercel URL(s) if anything calls the API directly. With the **automatic `/api` proxy** (when `VITE_API_BASE` is set on Vercel), the browser usually only hits your `*.vercel.app` origin; many setups work even if `CORS_ORIGIN` on the API is incomplete, because the edge forwards the request server-side.
 
@@ -20,13 +20,13 @@ You can point the browser at the API in these ways:
 
 ## Optional: manual `/api` rewrite (no `VITE_API_BASE` in the dashboard)
 
-If you do **not** set `VITE_API_BASE` on Vercel, the build script does not inject a proxy. You can still add a **rewrite before** the SPA fallback in `frontend/vercel.json` so `/api/*` is proxied to your Railway (etc.) URL. Example (replace the destination with your real API host):
+If you do **not** set `VITE_API_BASE` on Vercel, the build script does not inject a proxy. You can still add a **rewrite before** the SPA fallback in `frontend/vercel.json` so `/api/*` is proxied to your API host. Example (replace the destination with your real API origin):
 
 ```json
 "rewrites": [
   {
     "source": "/api/:path*",
-    "destination": "https://YOUR-API-HOST.up.railway.app/api/:path*"
+    "destination": "https://YOUR-API-HOST.example.com/api/:path*"
   },
   {
     "source": "/(.*)",
@@ -90,7 +90,7 @@ Link the project, set env vars in the dashboard or `vercel env add VITE_API_BASE
 | `cd frontend: No such file or directory` | **Root Directory** must be **`frontend`**, not `.`. Remove any custom Install Command that runs `cd frontend`. |
 | Blank page on `/login` or refresh | `frontend/vercel.json` rewrites should send SPA routes to `/index.html`. |
 | **`HTTP 405`** on **`POST /api/...`** (often on `*-git-*.vercel.app` preview URLs) | The **`/api` rewrite was not added** at build time (no **`VITE_API_BASE`** for **Preview**). Add the same **`VITE_API_BASE`** for the **Preview** environment in Vercel, then **redeploy** that preview. Production-only env → preview builds skip the proxy; POST is handled by static files → **405**. |
-| **`HTTP 502`** / generic **“Request failed”** after deploy | The `/api` proxy reached Vercel but **not** your API. Confirm **`VITE_API_BASE`** is the Railway **service root** only (`https://….up.railway.app`), **not** `…/api`. Redeploy after changing env vars. Open Railway logs and hit `/api/health` on the API host directly. |
+| **`HTTP 502`** / generic **“Request failed”** after deploy | The `/api` proxy reached Vercel but **not** your API. Confirm **`VITE_API_BASE`** is the API **origin only** (`https://your-api-host…`), **not** `…/api`. Redeploy after changing env vars. Open your API host’s logs and hit `/api/health` on the API URL directly. |
 | CORS blocked | Add your Vercel URL to backend `CORS_ORIGIN` (comma-separated if multiple). |
 
 Full stack (DB + API + env) walkthrough: **[DEPLOY.md](DEPLOY.md)**.

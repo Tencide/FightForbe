@@ -5,7 +5,7 @@ const TOKEN_KEY = 'fightforge_token';
  * (e.g. no variables in the Vercel dashboard). Must be `https://` if the site is HTTPS.
  * Leave empty to use `VITE_API_BASE` only, or same-origin `/api` (dev proxy / optional Vercel rewrite).
  *
- * Example: 'https://fightforge-api-production.up.railway.app'
+ * Example: 'https://api.yourdomain.com'
  */
 const API_ORIGIN_FALLBACK = '';
 
@@ -60,7 +60,7 @@ function httpErrorMessage(res, data) {
       const t = v.trim();
       if (t.startsWith('<')) {
         const lead = code ? `HTTP ${code}${reason ? ` ${reason}` : ''}` : 'Error';
-        return `${lead} — the server returned HTML instead of JSON. On Vercel, check VITE_API_BASE is only the API origin (e.g. https://xxx.up.railway.app with no /api path) and that the API is running.`;
+        return `${lead} — the server returned HTML instead of JSON. On Vercel, check VITE_API_BASE is only the API origin (e.g. https://api.example.com with no /api path) and that the API is running.`;
       }
       return t.length > 320 ? `${t.slice(0, 320)}…` : t;
     }
@@ -129,7 +129,7 @@ export async function apiFetch(path, { method = 'GET', body, token } = {}) {
           hint =
             " Often: API is down, wrong API URL, or CORS — add this site's origin to the backend CORS_ORIGIN.";
           if (onVercel) {
-            hint += ` Vercel: (1) Project → Settings → Environment Variables → add VITE_API_BASE = your API base URL (e.g. https://xxx.up.railway.app), no trailing slash. (2) Save, then Redeploy (env is applied at build time). (3) On the API server, set CORS_ORIGIN to include https://${window.location.host} (add preview URLs too if you use Preview deployments).`;
+            hint += ` Vercel: (1) Project → Settings → Environment Variables → add VITE_API_BASE = your API base URL (e.g. https://api.example.com), no trailing slash. (2) Save, then Redeploy (env is applied at build time). (3) On the API server, set CORS_ORIGIN to include https://${window.location.host} (add preview URLs too if you use Preview deployments).`;
           }
         } else if (url.startsWith('/')) {
           hint =
@@ -161,7 +161,7 @@ export async function apiFetch(path, { method = 'GET', body, token } = {}) {
       [502, 503, 504].includes(res.status)
     ) {
       msg +=
-        ' The Vercel /api proxy could not reach your backend — verify VITE_API_BASE, redeploy after env changes, and check Railway (etc.) logs.';
+        ' The Vercel /api proxy could not reach your backend — verify VITE_API_BASE, redeploy after env changes, and check your API host logs.';
     }
     if (
       typeof window !== 'undefined' &&

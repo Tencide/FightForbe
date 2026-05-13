@@ -1,9 +1,9 @@
 -- FightForge – MySQL schema
 -- Run: mysql -u root -p < database/schema.sql
 --
--- Railway: the managed DB often has no `fightforge` database; use
--- `database/schema.railway.sql` instead (or replace the first two statements
--- with `USE <your MYSQLDATABASE value>;`).
+-- If your provider only gives one database (no CREATE DATABASE): use
+-- `database/schema.single_mysql_database.sql` (edit the first `USE …` line),
+-- or replace the first two statements here with `USE your_db_name;`.
 
 CREATE DATABASE IF NOT EXISTS fightforge CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE fightforge;

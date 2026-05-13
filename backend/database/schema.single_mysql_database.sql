@@ -1,4 +1,6 @@
-USE railway;
+-- FightForge schema when MySQL already has a single database (no CREATE DATABASE).
+-- Change the next line to your actual database name (must match backend DB_NAME).
+USE fightforge;
 
 CREATE TABLE IF NOT EXISTS users (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
