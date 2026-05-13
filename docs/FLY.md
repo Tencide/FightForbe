@@ -37,6 +37,17 @@ Put the same **`DB_HOST`**, **`DB_PORT`**, **`DB_USER`**, **`DB_PASSWORD`**, **`
 3. A **MySQL 8+** database with schema applied (`backend/database/schema.sql` or `schema.single_mysql_database.sql`).
 4. A strong **`JWT_SECRET`** (e.g. `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`).
 
+### Billing (before first `apps create` / `deploy`)
+
+Fly often requires a **card on file** or **prepaid credit** before it will create or run apps — even if you stay inside free allowances. Add billing from the link Fly prints (e.g. **`https://fly.io/dashboard/…/billing`**) or **[Fly billing docs](https://fly.io/docs/about/pricing/)**.
+
+Until billing succeeds:
+
+- **`flyctl apps create …`** may fail → **no app** is created.
+- **`flyctl deploy`** then errors with **`app not found`** because nothing was registered.
+
+Fix billing first, then **`apps create`** again, then **`deploy`**.
+
 ---
 
 **Windows:** use **`flyctl`** for every command below (`flyctl launch`, `flyctl deploy`, …) if **`fly`** is not recognized — see Prerequisites.
@@ -169,7 +180,8 @@ Details: **[`VERCEL.md`](VERCEL.md)**.
 | Issue | What to check |
 |-------|----------------|
 | **503 / connection refused** | `fly logs` — crash loop? DB unreachable? |
-| **`region  not found`** | Ignore **`fly launch`**. Use **`flyctl apps create <name> --save -y`** then **`flyctl deploy --primary-region iad`** from **`backend/`** (or **`scripts/fly-first-deploy.ps1`**). Repo **`fly.toml`** has no **`primary_region`** line to avoid a Windows **`flyctl`** bug. If you see **`>>`** in PowerShell, press **`Ctrl+C`** and re-run the command on one line. |
+| **`We need your payment information`** | Add a card or credit in **[Fly billing](https://fly.io/dashboard)** (exact URL is in the error). Retry **`apps create`** then **`deploy`**. |
+| **`app not found`** | Usually the app was **never created** (billing blocked **`apps create`**, or wrong **`app`** name vs **`fly.toml`**). Run **`flyctl apps list`**. If missing, **`flyctl apps create fightforge-api --save -y`** after billing works. |
 | **JWT_SECRET must be set** | Backend refuses prod boot without a real secret — `fly secrets set JWT_SECRET=...` |
 | **MySQL connection errors** | Host allows Fly’s outbound IPs; correct **`DB_HOST`** / firewall / SSL mode if your provider requires TLS (may need code/config beyond `.env`). |
 | **CORS / login fails from Vercel** | **`CORS_ORIGIN`** exactly matches the browser origin (`https://your-project.vercel.app`). |
