@@ -43,19 +43,36 @@ Put the same **`DB_HOST`**, **`DB_PORT`**, **`DB_USER`**, **`DB_PASSWORD`**, **`
 
 ## 1. Create the app from `backend/`
 
-If the name `fightforge-api` in **`fly.toml`** is already taken on Fly, change the `app = '...'` line to something unique, or run `fly launch` and let it set the name.
+### If `flyctl launch` fails with **`region  not found`** (common on Windows)
+
+Do **not** rely on `fly launch`. The repo **`fly.toml`** omits **`primary_region`** on purpose so nothing merges to an empty region.
+
+From **`backend/`**:
+
+```bash
+flyctl apps create fightforge-api --save -y
+flyctl deploy --primary-region iad
+```
+
+- Change **`fightforge-api`** if that name is taken (`fly.toml` → **`app`** must match).
+- Or run the helper: **`pwsh -File scripts/fly-first-deploy.ps1`**
+
+If **`apps create`** says the app already exists, skip it and run only **`flyctl deploy --primary-region iad`**.
+
+### Optional: `flyctl launch`
+
+Only if you want the interactive wizard **and** your **`flyctl`** version works:
 
 ```bash
 cd backend
-flyctl launch --region iad
+flyctl launch --region iad -y
 ```
 
-If you omit **`--region`**, some Windows **`flyctl`** builds still hit **`region  not found`** even when **`fly.toml`** has **`primary_region`** — the flag forces the region. **`flyctl launch --primary-region iad`** is equivalent.
+If you still see **`region  not found`**, use the **`apps create` + `deploy`** steps above.
 
-- Confirm **Dockerfile** build when prompted.
-- You can **defer deploy** until secrets exist, or deploy and fix env next.
+### PowerShell tip
 
-The repo includes **`fly.toml`** with **`internal_port = 5000`** (matches **`Dockerfile`** / **`server.js`**). Fly sets **`PORT`** inside the machine to match **`internal_port`** — do not rely on a conflicting **`PORT`** in **`[env]`**.
+If your prompt shows **`>>`** after typing a command, you are in a **continuation** (unfinished string). Press **`Ctrl+C`**, then run **`flyctl`** again on **one line**.
 
 ---
 
@@ -93,6 +110,8 @@ You can list multiple origins separated by commas. After changing secrets, the a
 ---
 
 ## 3. Deploy
+
+After the first **`deploy --primary-region iad`**, later updates are usually:
 
 ```bash
 fly deploy
@@ -150,7 +169,7 @@ Details: **[`VERCEL.md`](VERCEL.md)**.
 | Issue | What to check |
 |-------|----------------|
 | **503 / connection refused** | `fly logs` — crash loop? DB unreachable? |
-| **`region  not found` / empty region** | Run **`flyctl launch --region iad`** (or **`--primary-region iad`**). Windows **`flyctl`** sometimes ignores **`primary_region`** in **`fly.toml`** until you pass this flag. Ensure **`[[http_service.checks]]`** is **not** indented under **`[http_service]`** — see repo **`backend/fly.toml`**. |
+| **`region  not found`** | Ignore **`fly launch`**. Use **`flyctl apps create <name> --save -y`** then **`flyctl deploy --primary-region iad`** from **`backend/`** (or **`scripts/fly-first-deploy.ps1`**). Repo **`fly.toml`** has no **`primary_region`** line to avoid a Windows **`flyctl`** bug. If you see **`>>`** in PowerShell, press **`Ctrl+C`** and re-run the command on one line. |
 | **JWT_SECRET must be set** | Backend refuses prod boot without a real secret — `fly secrets set JWT_SECRET=...` |
 | **MySQL connection errors** | Host allows Fly’s outbound IPs; correct **`DB_HOST`** / firewall / SSL mode if your provider requires TLS (may need code/config beyond `.env`). |
 | **CORS / login fails from Vercel** | **`CORS_ORIGIN`** exactly matches the browser origin (`https://your-project.vercel.app`). |

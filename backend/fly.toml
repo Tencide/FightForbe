@@ -1,13 +1,13 @@
-# FightForge API — Fly.io (https://fly.io/docs/reference/configuration/)
+# FightForge API — Fly.io
+# https://fly.io/docs/reference/configuration/
 #
-# If `fly launch` errors with "region  not found", run:
-#   flyctl launch --region iad
-# or --primary-region iad
+# This file intentionally has NO "primary_region" — some Windows flyctl versions
+# throw "region  not found" when `fly launch` merges TOML + flags. Set region on
+# the first deploy instead:  flyctl deploy --primary-region iad
 #
-# Change `app` if the name is taken. Regions: flyctl platform regions
+# If "fightforge-api" is taken, change `app` and use the new name in commands.
 
 app = "fightforge-api"
-primary_region = "iad"
 
 [build]
   dockerfile = "Dockerfile"
