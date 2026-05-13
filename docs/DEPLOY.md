@@ -29,10 +29,9 @@ use for the backend (so they share a private network and you pay one bill).
    - `MYSQLPASSWORD`
    - `MYSQLDATABASE` (default: `railway` — change to `fightforge` in the
      **Settings** tab if you like).
-4. Apply the schema. Open the MySQL service → **Database** → **Data** → paste and run:
-   - Prefer **`backend/database/schema.railway.sql`** (uses the default DB, usually `railway`).
+4. Apply the schema. Open the MySQL service → **Database** → **Data** → paste and run **`backend/database/schema.railway.sql`** (first line must be `USE railway;` — if **`USE railway`** fails with unknown database, open **Variables** on the MySQL service, read **`MYSQLDATABASE`**, and change line 1 to `USE that_name;`).
+   - Paste only from the file: no Markdown fences, no extra text. If Railway reports syntax error at line 1, clear the box and paste again.
    - Or use **`backend/database/schema.sql`** only if you can create a separate DB named `fightforge` and your app’s `DB_NAME` matches it.
-   - If `USE railway` fails, open **Variables** on the MySQL service, read **`MYSQLDATABASE`**, and change the first line of `schema.railway.sql` to `USE that_name;`.
    - Or use any MySQL client (**Connect** on the MySQL service) with the public proxy host Railway gives you.
 
 > The first time the seed script runs from the backend it will populate optional

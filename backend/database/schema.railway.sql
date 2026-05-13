@@ -1,8 +1,3 @@
--- FightForge – MySQL schema for Railway’s default database
--- Railway MySQL often has no separate `fightforge` DB; `MYSQLDATABASE` defaults to `railway`.
--- In Railway → MySQL → Database → Data, paste this whole file and run it.
--- Then set backend DB_NAME to railway, or reference MySQL.MYSQLDATABASE in Railway Variables.
-
 USE railway;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -13,22 +8,13 @@ CREATE TABLE IF NOT EXISTS users (
   role ENUM('athlete', 'coach', 'admin') NOT NULL DEFAULT 'athlete',
   coach_id INT UNSIGNED NULL,
   profile JSON DEFAULT NULL,
-  -- Data URL of a client-resized JPEG (typically 256x256 ~30 KB). MEDIUMTEXT
-  -- caps at 16 MB which is far more than needed; server-side size limit is
-  -- enforced in the route handler.
   avatar_url MEDIUMTEXT DEFAULT NULL,
-  -- Madden-style player rating. Everyone starts at 60. Each 100 XP earned by
-  -- completing workouts/meals raises overall by 1, capped at 99.
   xp INT UNSIGNED NOT NULL DEFAULT 0,
   overall TINYINT UNSIGNED NOT NULL DEFAULT 60,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_users_coach FOREIGN KEY (coach_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- Friend graph. One row per directed request; once accepted, both users see
--- each other on their leaderboards. Status:
---   pending  — waiting for recipient to accept
---   accepted — friendship is mutual + active
 CREATE TABLE IF NOT EXISTS friendships (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   requester_id INT UNSIGNED NOT NULL,
@@ -73,7 +59,6 @@ CREATE TABLE IF NOT EXISTS meals (
   CONSTRAINT fk_meals_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Curated library of workout templates the auto-generator can pull from.
 CREATE TABLE IF NOT EXISTS workout_library (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(200) NOT NULL,
@@ -87,7 +72,6 @@ CREATE TABLE IF NOT EXISTS workout_library (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Curated library of meal items the daily meal generator pulls from.
 CREATE TABLE IF NOT EXISTS meal_library (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(200) NOT NULL,
@@ -118,9 +102,6 @@ CREATE TABLE IF NOT EXISTS progress_entries (
   CONSTRAINT fk_progress_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Messages are ephemeral by default: once the recipient sees one, it
--- self-destructs ~60s later (lazy cleanup on every GET) unless either party
--- "saves" it. The saved flag persists the message indefinitely.
 CREATE TABLE IF NOT EXISTS messages (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   sender_id INT UNSIGNED NOT NULL,
