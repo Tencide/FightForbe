@@ -1,14 +1,20 @@
-# Fly.io config — FightForge API (Express)
-# Docs: https://fly.io/docs/reference/configuration/
+# FightForge API — Fly.io (https://fly.io/docs/reference/configuration/)
 #
-# If you see "region  not found", run: flyctl platform regions
-# Then set a valid CODE below (e.g. iad = Ashburn, ord = Chicago).
+# Before first deploy:
+#   - Change `app` if "fightforge-api" is taken (globally unique on Fly).
+#   - Change `primary_region` if you want another region (`flyctl platform regions`).
+#
+# Port must match Dockerfile EXPOSE and server `process.env.PORT` (default 5000).
 
 app = "fightforge-api"
 primary_region = "iad"
 
 [build]
   dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "5000"
 
 [http_service]
   internal_port = 5000
@@ -17,6 +23,13 @@ primary_region = "iad"
   auto_start_machines = true
   min_machines_running = 0
   processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "15s"
+    method = "GET"
+    path = "/api/health"
 
 [[vm]]
   memory = "256mb"
