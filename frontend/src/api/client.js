@@ -48,6 +48,28 @@ async function parseJson(res) {
   }
 }
 
+/** Non-2xx responses: prefer JSON `error` / `message`, else status; avoid dumping HTML bodies. */
+function httpErrorMessage(res, data) {
+  const code = res.status || 0;
+  const reason = (res.statusText && String(res.statusText).trim()) || '';
+
+  if (data && typeof data === 'object') {
+    for (const key of ['error', 'message']) {
+      const v = data[key];
+      if (typeof v !== 'string' || !v.trim()) continue;
+      const t = v.trim();
+      if (t.startsWith('<')) {
+        const lead = code ? `HTTP ${code}${reason ? ` ${reason}` : ''}` : 'Error';
+        return `${lead} — the server returned HTML instead of JSON. On Vercel, check VITE_API_BASE is only the API origin (e.g. https://xxx.up.railway.app with no /api path) and that the API is running.`;
+      }
+      return t.length > 320 ? `${t.slice(0, 320)}…` : t;
+    }
+  }
+
+  if (code) return `HTTP ${code}${reason ? ` ${reason}` : ''}`;
+  return 'Request failed';
+}
+
 export async function apiFetch(path, { method = 'GET', body, token } = {}) {
   const vercelSameOriginProxy = import.meta.env.VITE_FF_VERCEL_PROXY === '1';
   if (isProdBuild() && path.startsWith('/api') && !API_BASE && !vercelSameOriginProxy) {
@@ -131,7 +153,16 @@ export async function apiFetch(path, { method = 'GET', body, token } = {}) {
     );
   }
   if (!res.ok) {
-    const msg = data?.error || data?.message || res.statusText || 'Request failed';
+    let msg = httpErrorMessage(res, data);
+    if (
+      typeof window !== 'undefined' &&
+      (window.location.hostname.endsWith('.vercel.app') || window.location.hostname === 'vercel.app') &&
+      url.startsWith('/api') &&
+      [502, 503, 504].includes(res.status)
+    ) {
+      msg +=
+        ' The Vercel /api proxy could not reach your backend — verify VITE_API_BASE, redeploy after env changes, and check Railway (etc.) logs.';
+    }
     const err = new Error(msg);
     err.status = res.status;
     err.data = data;
