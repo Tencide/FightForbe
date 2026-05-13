@@ -163,6 +163,17 @@ export async function apiFetch(path, { method = 'GET', body, token } = {}) {
       msg +=
         ' The Vercel /api proxy could not reach your backend — verify VITE_API_BASE, redeploy after env changes, and check Railway (etc.) logs.';
     }
+    if (
+      typeof window !== 'undefined' &&
+      (window.location.hostname.endsWith('.vercel.app') || window.location.hostname === 'vercel.app') &&
+      url.startsWith('/api') &&
+      res.status === 405 &&
+      method !== 'GET' &&
+      method !== 'HEAD'
+    ) {
+      msg +=
+        ' This usually means the /api proxy was not injected (missing VITE_API_BASE for this deployment type). In Vercel → Environment Variables, add VITE_API_BASE for **Preview** as well as Production, then redeploy this branch.';
+    }
     const err = new Error(msg);
     err.status = res.status;
     err.data = data;

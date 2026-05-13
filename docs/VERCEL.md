@@ -51,7 +51,7 @@ Vercel must use the **`frontend`** folder as the project root. There is **no** `
 
    | Name | Value | Environments |
    |------|--------|----------------|
-   | `VITE_API_BASE` | `https://your-api-host.example.com` (origin only — **no** `/api` suffix) | Production, Preview — omit if using fallback or proxy |
+   | `VITE_API_BASE` | `https://your-api-host.example.com` (origin only — **no** `/api` suffix) | **Production and Preview** — Preview PR builds use a different hostname; if `VITE_API_BASE` is Production-only, `/api` POSTs on preview URLs often return **405 Method Not Allowed** (static host). |
    | `VITE_SHOW_DEMO_ACCOUNTS` | `false` | Production (optional on Preview for testing) |
 
 6. **Deploy**. After the first deploy, copy your **`.vercel.app`** URL and add it to the backend `CORS_ORIGIN`, then redeploy the API.
@@ -89,7 +89,7 @@ Link the project, set env vars in the dashboard or `vercel env add VITE_API_BASE
 |-------|-----|
 | `cd frontend: No such file or directory` | **Root Directory** must be **`frontend`**, not `.`. Remove any custom Install Command that runs `cd frontend`. |
 | Blank page on `/login` or refresh | `frontend/vercel.json` rewrites should send SPA routes to `/index.html`. |
-| `Failed to fetch` / signup or login on **\*.vercel.app** | Set **`VITE_API_BASE`** to your API’s `https://…` origin (no slash at end), **save**, **Redeploy**. The build injects a same-origin **`/api` proxy** so the browser no longer calls the API cross-origin (the usual CORS cause). Still ensure the API URL is correct and reachable. |
+| **`HTTP 405`** on **`POST /api/...`** (often on `*-git-*.vercel.app` preview URLs) | The **`/api` rewrite was not added** at build time (no **`VITE_API_BASE`** for **Preview**). Add the same **`VITE_API_BASE`** for the **Preview** environment in Vercel, then **redeploy** that preview. Production-only env → preview builds skip the proxy; POST is handled by static files → **405**. |
 | **`HTTP 502`** / generic **“Request failed”** after deploy | The `/api` proxy reached Vercel but **not** your API. Confirm **`VITE_API_BASE`** is the Railway **service root** only (`https://….up.railway.app`), **not** `…/api`. Redeploy after changing env vars. Open Railway logs and hit `/api/health` on the API host directly. |
 | CORS blocked | Add your Vercel URL to backend `CORS_ORIGIN` (comma-separated if multiple). |
 

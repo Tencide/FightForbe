@@ -26,6 +26,9 @@ if (!vercelPlatformBuild) {
 
 const raw = (process.env.VITE_API_BASE || '').trim().replace(/\/+$/, '');
 if (!raw) {
+  console.warn(
+    '[apply-vercel-api-rewrite] VITE_API_BASE is empty — skipping /api proxy. POST /api/* will hit the static app (often HTTP 405). Set VITE_API_BASE for every Vercel environment you use (Production **and** Preview), then redeploy.',
+  );
   process.exit(0);
 }
 
