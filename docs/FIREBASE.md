@@ -55,6 +55,9 @@ Set these **Vite** variables (Production **and** Preview if you use previews):
 | `VITE_FIREBASE_AUTH_DOMAIN` | e.g. `your-project.firebaseapp.com` |
 | `VITE_FIREBASE_PROJECT_ID` | Project ID |
 | `VITE_FIREBASE_APP_ID` | Web app ID |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Optional; from the same web config snippet |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Optional |
+| `VITE_FIREBASE_MEASUREMENT_ID` | Optional (Analytics); this app does not call `getAnalytics` unless you add it |
 
 You still need **`VITE_API_BASE`** (or the Vercel `/api` proxy) so the SPA can reach **`/api/auth/firebase-session`**.
 
