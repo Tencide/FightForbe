@@ -2,7 +2,7 @@
 
 MMA training and nutrition platform — **React** (Vite) frontend, **Node.js + Express** API, and **MySQL**, with role-based access for athletes, coaches, and admins.
 
-**One link for people’s phones (any network, HTTPS):** see **[`docs/SHARE_LINK.md`](docs/SHARE_LINK.md)** — deploy for a stable URL, or use a tunnel (e.g. ngrok) for a quick shareable link while your PC runs Docker.
+**One link for people’s phones (any network, HTTPS):** see **[`docs/SHARE_LINK.md`](docs/SHARE_LINK.md)** — deploy for a stable URL (e.g. **Vercel** + API per **[`docs/VERCEL.md`](docs/VERCEL.md)** / **[`docs/DEPLOY.md`](docs/DEPLOY.md)**), or use a tunnel for a quick shareable link while your PC runs Docker.
 
 ## Quick start (easiest way to try it)
 
@@ -114,6 +114,6 @@ Open the Vite URL (usually `http://127.0.0.1:5173`). The dev server proxies `/ap
 
 ## Deployment
 
-See **[`docs/DEPLOY.md`](docs/DEPLOY.md)** for deploying MySQL, the API, the SPA (e.g. Vercel), environment variables, and CORS — with any host you choose.
+**Frontend (Vercel):** **[`docs/VERCEL.md`](docs/VERCEL.md)** — import repo, set **Root Directory** to **`frontend`**, add **`VITE_API_BASE`** (Production **and** Preview). Copy env names from **[`frontend/.env.vercel.example`](frontend/.env.vercel.example)**.
 
-**Frontend on Vercel:** set **Root Directory** to **`frontend`**. Point the app at your API with **`VITE_API_BASE`**, or **`API_ORIGIN_FALLBACK`** in `frontend/src/api/client.js`, or an **`/api` rewrite** in `frontend/vercel.json` — see **[`docs/VERCEL.md`](docs/VERCEL.md)**.
+Full stack (MySQL, API, CORS): **[`docs/DEPLOY.md`](docs/DEPLOY.md)**. Vercel-only routing details and troubleshooting: **[`docs/VERCEL.md`](docs/VERCEL.md)**.

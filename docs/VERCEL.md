@@ -2,19 +2,41 @@
 
 Vercel hosts the **React (Vite) SPA** only. The **Express API** and **MySQL** must run elsewhere — see **[`DEPLOY.md`](DEPLOY.md)** for typical options (Render, Fly.io, a VPS, managed MySQL, etc.).
 
-You can point the browser at the API in these ways:
+---
 
-1. **`VITE_API_BASE`** in the Vercel project (recommended). The repo’s **`frontend/vercel.json`** sets **`buildCommand`** to `FIGHTFORGE_VERCEL_BUILD=1 npm run build` so the build always runs `scripts/apply-vercel-api-rewrite.mjs`, which injects an **`/api` → your API** rewrite and forces the client to use **same-origin** `/api/...`. That avoids **“Failed to fetch”** from browser CORS. You do **not** need to enable Vercel’s optional **“System environment variables”** toggle for this to work.
+## Set up on Vercel (first deploy)
+
+1. Push this repo to **GitHub** (or GitLab / Bitbucket).
+2. Go to [vercel.com/new](https://vercel.com/new) → **Import** the repository.
+3. **Root Directory** → **Edit** → set to **`frontend`** (required — do not leave `.`).
+4. Leave **Framework Preset** as **Vite** (auto-detected). **Build Command** should match `frontend/vercel.json`: `FIGHTFORGE_VERCEL_BUILD=1 npm run build`. **Output Directory** → **`dist`**. **Install Command** → **`npm ci`** (from `vercel.json`).
+5. **Environment Variables** → add (use **[`frontend/.env.vercel.example`](../frontend/.env.vercel.example)** as a copy-paste reference):
+
+   | Name | Value | Environments |
+   |------|--------|----------------|
+   | `VITE_API_BASE` | Your API **origin** only, e.g. `https://api.example.com` — **no** `/api` suffix | **Production** and **Preview** (both — see below) |
+   | `VITE_SHOW_DEMO_ACCOUNTS` | `false` for anything public | Production (optional `true` on Preview for demos) |
+
+6. **Deploy**. When the build finishes, open the `.vercel.app` URL.
+7. On your **API** host, set **`CORS_ORIGIN`** to include your Vercel origins, e.g. `https://your-project.vercel.app,https://your-project-git-main-xxx.vercel.app` (add Preview patterns if teammates use PR previews), then redeploy the API.
+
+**Why `VITE_API_BASE` on Preview too:** the build injects a same-origin **`/api` → your API** rewrite (see `scripts/apply-vercel-api-rewrite.mjs`). If `VITE_API_BASE` is Production-only, **Preview** builds skip that rewrite; `POST /api/...` hits the static shell and often returns **405 Method Not Allowed**.
+
+---
+
+## How the browser reaches your API
+
+1. **`VITE_API_BASE`** in the Vercel project (recommended). **`frontend/vercel.json`** sets **`buildCommand`** to `FIGHTFORGE_VERCEL_BUILD=1 npm run build` so the build always runs **`scripts/apply-vercel-api-rewrite.mjs`**, which injects an **`/api` → your API** rewrite and clears client `VITE_API_BASE` so the app calls **same-origin** `/api/...`. That avoids **“Failed to fetch”** from browser CORS. You do **not** need Vercel’s optional **“System environment variables”** toggle for this to work.
 2. **No dashboard env vars:** set **`API_ORIGIN_FALLBACK`** in `frontend/src/api/client.js` to your API’s `https://…` origin (one line in git), then redeploy the frontend.
 
 ---
 
 ## Prerequisites
 
-1. Repo pushed to **GitHub** (or GitLab / Bitbucket — Vercel supports those too).
+1. Repo on **GitHub** (or GitLab / Bitbucket).
 2. A **public HTTPS URL** for your API, e.g. `https://api.yourdomain.com`  
    - No trailing slash (the app normalizes this, but keep it clean).
-3. Backend **`CORS_ORIGIN`** is still a good idea for your Vercel URL(s) if anything calls the API directly. With the **automatic `/api` proxy** (when `VITE_API_BASE` is set on Vercel), the browser usually only hits your `*.vercel.app` origin; many setups work even if `CORS_ORIGIN` on the API is incomplete, because the edge forwards the request server-side.
+3. Backend **`CORS_ORIGIN`** including your Vercel URL(s). With the **automatic `/api` proxy** (when `VITE_API_BASE` is set on Vercel), the browser usually only hits your `*.vercel.app` origin; many setups still work if `CORS_ORIGIN` is incomplete, because the edge forwards server-side.
 
 ---
 
@@ -39,30 +61,19 @@ Then leave **`VITE_API_BASE`** and **`API_ORIGIN_FALLBACK`** empty: the app call
 
 ---
 
-## Configure the Vercel project (required)
+## Local parity: `vercel dev`
 
-Vercel must use the **`frontend`** folder as the project root. There is **no** `vercel.json` at the repository root — config lives in **`frontend/vercel.json`**.
+From **`frontend/`** (after `npm install`):
 
-1. Go to [vercel.com](https://vercel.com) → **Add New…** → **Project**.
-2. **Import** your FightForge repository.
-3. **Root Directory** → click **Edit** and set it to **`frontend`** (not `.` and not empty if Vercel guessed wrong).
-4. Confirm **Framework Preset** is **Vite**, **Output Directory** `dist`, and that **Build Command** in the dashboard **matches `frontend/vercel.json`** (`FIGHTFORGE_VERCEL_BUILD=1 npm run build`). If the command was changed to plain `npm run build`, the automatic `/api` proxy will not run unless you restore the prefix or enable Vercel system env so `VERCEL=1` exists during build.
-5. **Environment variables** (optional — skip if you use **`API_ORIGIN_FALLBACK`** in `frontend/src/api/client.js` or the **`/api` rewrite** above) — Project → Settings → Environment Variables:
+```bash
+npx vercel dev
+```
 
-   | Name | Value | Environments |
-   |------|--------|----------------|
-   | `VITE_API_BASE` | `https://your-api-host.example.com` (origin only — **no** `/api` suffix) | **Production and Preview** — Preview PR builds use a different hostname; if `VITE_API_BASE` is Production-only, `/api` POSTs on preview URLs often return **405 Method Not Allowed** (static host). |
-   | `VITE_SHOW_DEMO_ACCOUNTS` | `false` | Production (optional on Preview for testing) |
-
-6. **Deploy**. After the first deploy, copy your **`.vercel.app`** URL and add it to the backend `CORS_ORIGIN`, then redeploy the API.
-
-### Why not repository root (`.`)?
-
-If **Root Directory** is left as **`.`**, Vercel runs install/build at the repo root where there is **no** `package.json`, and/or an old root `vercel.json` could run `cd frontend`, which **fails** when Vercel has already changed the working directory to `frontend`. Always set **Root Directory = `frontend`**.
+Uses **`devCommand`** from `vercel.json` (`npm run dev`). Set **`VITE_API_BASE`** in a local **`.env`** or export it so the dev server can mirror production routing if you need to test the rewrite behavior.
 
 ---
 
-## CLI (optional)
+## CLI (link repo without the dashboard)
 
 ```bash
 npm i -g vercel
@@ -70,15 +81,15 @@ cd path/to/FightForge/frontend
 vercel
 ```
 
-Link the project, set env vars in the dashboard or `vercel env add VITE_API_BASE production`.
+Link the project, then **`vercel env add VITE_API_BASE`** for production and preview.
 
 ---
 
 ## Checklist after deploy
 
 - [ ] `https://<vercel-app>/` loads the home page.
-- [ ] **Sign up** or **Log in** triggers requests to `https://<api-host>/api/...` (check Network tab).
-- [ ] No CORS errors — backend `CORS_ORIGIN` matches the exact browser origin (scheme + host + port).
+- [ ] **Sign up** or **Log in** triggers requests that reach your API (Network tab: `/api/...` on same host or proxied).
+- [ ] No CORS errors — backend `CORS_ORIGIN` matches the exact browser origin when the browser calls the API directly.
 - [ ] Production: `VITE_SHOW_DEMO_ACCOUNTS=false` so sample credentials are not advertised.
 
 ---
@@ -89,8 +100,9 @@ Link the project, set env vars in the dashboard or `vercel env add VITE_API_BASE
 |-------|-----|
 | `cd frontend: No such file or directory` | **Root Directory** must be **`frontend`**, not `.`. Remove any custom Install Command that runs `cd frontend`. |
 | Blank page on `/login` or refresh | `frontend/vercel.json` rewrites should send SPA routes to `/index.html`. |
-| **`HTTP 405`** on **`POST /api/...`** (often on `*-git-*.vercel.app` preview URLs) | The **`/api` rewrite was not added** at build time (no **`VITE_API_BASE`** for **Preview**). Add the same **`VITE_API_BASE`** for the **Preview** environment in Vercel, then **redeploy** that preview. Production-only env → preview builds skip the proxy; POST is handled by static files → **405**. |
-| **`HTTP 502`** / generic **“Request failed”** after deploy | The `/api` proxy reached Vercel but **not** your API. Confirm **`VITE_API_BASE`** is the API **origin only** (`https://your-api-host…`), **not** `…/api`. Redeploy after changing env vars. Open your API host’s logs and hit `/api/health` on the API URL directly. |
+| **`HTTP 405`** on **`POST /api/...`** (often on `*-git-*.vercel.app` preview URLs) | The **`/api` rewrite was not added** at build time (no **`VITE_API_BASE`** for **Preview**). Add **`VITE_API_BASE`** for **Preview** in Vercel, then **redeploy** that preview. |
+| **`HTTP 502`** / generic **“Request failed”** after deploy | The `/api` proxy reached Vercel but **not** your API. Confirm **`VITE_API_BASE`** is the API **origin only** (`https://your-api-host…`), **not** `…/api`. Redeploy after env changes. Hit `/api/health` on the API host directly. |
+| **`npm ci` fails** on Vercel | Lockfile out of sync with `package.json`. Run `npm install` locally in `frontend/`, commit **`package-lock.json`**, push again. |
 | CORS blocked | Add your Vercel URL to backend `CORS_ORIGIN` (comma-separated if multiple). |
 
-Full stack (DB + API + env) walkthrough: **[DEPLOY.md](DEPLOY.md)**.
+Full stack (DB + API + env) walkthrough: **[`DEPLOY.md`](DEPLOY.md)**.

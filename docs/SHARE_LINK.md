@@ -8,7 +8,10 @@ Teammates need a **public HTTPS URL**. Your laptop’s `http://192.168…` addre
 
 Host the app on the internet once, then share something like `https://your-app.vercel.app`.
 
-Follow **[`DEPLOY.md`](DEPLOY.md)** end-to-end: MySQL, Express API, Vercel (or other) frontend, `VITE_API_BASE`, `CORS_ORIGIN`. No tunnel, no PC that must stay on.
+- **Frontend on Vercel:** follow **[`VERCEL.md`](VERCEL.md)** (root directory **`frontend`**, **`VITE_API_BASE`**, Preview + Production).
+- **API + MySQL:** follow **[`DEPLOY.md`](DEPLOY.md)** (`CORS_ORIGIN` must include your Vercel URL).
+
+No tunnel, no PC that must stay on.
 
 ---
 

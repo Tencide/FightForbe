@@ -65,7 +65,7 @@ Assign a **public HTTPS URL** to the service (platform “domain” / “URL” 
 
 ## 3. Deploy the frontend (Vercel)
 
-**Root Directory** must be **`frontend`** (see **[`VERCEL.md`](VERCEL.md)**).
+**Root Directory** must be **`frontend`**. Step-by-step (env vars, Preview vs Production, `vercel dev`): **[`VERCEL.md`](VERCEL.md)**. Variable cheat sheet: **[`frontend/.env.vercel.example`](../frontend/.env.vercel.example)**.
 
 | Name | Value |
 |------|--------|
