@@ -39,7 +39,19 @@ export default function Login() {
     try {
       await login(email, password);
     } catch (err) {
-      setError(err.message || 'Login failed');
+      let msg = err.message || 'Login failed';
+      if (import.meta.env.DEV && /could not reach|failed to fetch|load failed|network/i.test(msg)) {
+        msg += ' — Is the API running? cd backend && npm start (default http://127.0.0.1:5000).';
+      }
+      if (
+        import.meta.env.PROD &&
+        typeof window !== 'undefined' &&
+        (window.location.hostname.endsWith('.vercel.app') || window.location.hostname === 'vercel.app') &&
+        /could not reach|failed to fetch|load failed|network|not configured|html instead of json|cors/i.test(msg)
+      ) {
+        msg += ' See docs/VERCEL.md — set VITE_API_BASE and CORS_ORIGIN on your API.';
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

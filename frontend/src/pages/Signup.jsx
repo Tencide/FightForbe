@@ -46,7 +46,20 @@ export default function Signup() {
       localStorage.setItem('fightforge_user', JSON.stringify(data.user));
       window.location.assign('/dashboard');
     } catch (err) {
-      setError(err.message || 'Signup failed');
+      let msg = err.message || 'Signup failed';
+      if (import.meta.env.DEV && /could not reach|failed to fetch|load failed|network/i.test(msg)) {
+        msg += ' — Is the API running? From repo root: cd backend && npm start (default http://127.0.0.1:5000).';
+      }
+      if (
+        import.meta.env.PROD &&
+        typeof window !== 'undefined' &&
+        (window.location.hostname.endsWith('.vercel.app') || window.location.hostname === 'vercel.app') &&
+        /could not reach|failed to fetch|load failed|network|not configured|html instead of json|cors/i.test(msg)
+      ) {
+        msg +=
+          ' See docs/VERCEL.md — you need VITE_API_BASE (or an /api rewrite) plus CORS_ORIGIN on your API matching this site.';
+      }
+      setError(msg);
       setLoading(false);
     }
   }
