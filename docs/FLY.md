@@ -47,14 +47,15 @@ If the name `fightforge-api` in **`fly.toml`** is already taken on Fly, change t
 
 ```bash
 cd backend
-fly launch
+flyctl launch --region iad
 ```
 
-- Choose an **app name** (globally unique), region (e.g. `iad`), 
-- Confirm **Dockerfile** build,
-- **Do not deploy yet** if you still need to set secrets — or deploy and fix secrets next.
+If you omit **`--region`**, some Windows **`flyctl`** builds still hit **`region  not found`** even when **`fly.toml`** has **`primary_region`** — the flag forces the region. **`flyctl launch --primary-region iad`** is equivalent.
 
-The repo includes **`fly.toml`** with **`internal_port = 5000`** (matches `Dockerfile` `EXPOSE 5000` and `server.js`). If `fly launch` generated another port, set **`internal_port`** to **`5000`** or set **`PORT=5000`** in Fly secrets so it matches.
+- Confirm **Dockerfile** build when prompted.
+- You can **defer deploy** until secrets exist, or deploy and fix env next.
+
+The repo includes **`fly.toml`** with **`internal_port = 5000`** (matches **`Dockerfile`** / **`server.js`**). Fly sets **`PORT`** inside the machine to match **`internal_port`** — do not rely on a conflicting **`PORT`** in **`[env]`**.
 
 ---
 
@@ -149,7 +150,7 @@ Details: **[`VERCEL.md`](VERCEL.md)**.
 | Issue | What to check |
 |-------|----------------|
 | **503 / connection refused** | `fly logs` — crash loop? DB unreachable? |
-| **`region  not found` / empty region** | **`fly.toml`** must set **`primary_region`** to a real code (see `flyctl platform regions`, e.g. `iad`, `ord`). Use straight double-quotes in `fly.toml`. Or delete **`primary_region`** from `fly.toml` and run **`flyctl launch`** again so it prompts for a region. |
+| **`region  not found` / empty region** | Run **`flyctl launch --region iad`** (or **`--primary-region iad`**). Windows **`flyctl`** sometimes ignores **`primary_region`** in **`fly.toml`** until you pass this flag. Ensure **`[[http_service.checks]]`** is **not** indented under **`[http_service]`** — see repo **`backend/fly.toml`**. |
 | **JWT_SECRET must be set** | Backend refuses prod boot without a real secret — `fly secrets set JWT_SECRET=...` |
 | **MySQL connection errors** | Host allows Fly’s outbound IPs; correct **`DB_HOST`** / firewall / SSL mode if your provider requires TLS (may need code/config beyond `.env`). |
 | **CORS / login fails from Vercel** | **`CORS_ORIGIN`** exactly matches the browser origin (`https://your-project.vercel.app`). |
