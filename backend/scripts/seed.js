@@ -123,6 +123,7 @@ async function main() {
 
   await seedWorkoutLibrary();
   await seedMealLibrary();
+  await seedReels();
 
   console.log('Seed complete. Sample password for bundled test accounts:', SAMPLE_PASSWORD);
   console.log('  admin@fightforge.test (admin)');
@@ -350,6 +351,59 @@ const MEAL_LIBRARY_SEEDS = [
   { title: 'Beef jerky + trail mix', meal_type: 'snack', calories: 360, protein_g: 22, carbs_g: 30, fat_g: 16, goal_alignment: 'maintain,bulk', dietary_tag: 'halal', prep_minutes: 0, ingredients: '1.5 oz beef jerky, 1/4 cup trail mix' },
   { title: 'Rice cakes + tuna', meal_type: 'snack', calories: 240, protein_g: 25, carbs_g: 28, fat_g: 4, goal_alignment: 'cut', dietary_tag: 'kosher', prep_minutes: 3, ingredients: '2 rice cakes, 1 can tuna, mustard' },
 ];
+
+async function seedReels() {
+  let hasTable = true;
+  try {
+    await pool.query('SELECT 1 FROM reels LIMIT 1');
+  } catch {
+    hasTable = false;
+  }
+  if (!hasTable) {
+    console.warn('reels table missing — run backend/database/reels_migration.sql on your database');
+    return;
+  }
+
+  const [count] = await pool.query('SELECT COUNT(*) AS c FROM reels');
+  if (count[0].c > 0) return;
+
+  const [coachRows] = await pool.query("SELECT id FROM users WHERE email = 'coach@fightforge.test' LIMIT 1");
+  const [athleteRows] = await pool.query(
+    "SELECT id FROM users WHERE email = 'athlete@fightforge.test' LIMIT 1"
+  );
+  if (!coachRows.length || !athleteRows.length) return;
+
+  const samples = [
+    {
+      authorId: coachRows[0].id,
+      videoUrl: 'https://www.youtube.com/shorts/L7Q7wv51IQk',
+      kind: 'youtube',
+      caption: 'Pad work — stay sharp between rounds.',
+      sport: 'mma',
+    },
+    {
+      authorId: athleteRows[0].id,
+      videoUrl: 'https://www.youtube.com/watch?v=BlS3gkEOZdo',
+      kind: 'youtube',
+      caption: 'Heavy bag rounds from camp.',
+      sport: 'boxing',
+    },
+    {
+      authorId: coachRows[0].id,
+      videoUrl: 'https://www.youtube.com/watch?v=4pKj2VnB9bE',
+      kind: 'youtube',
+      caption: 'Grappling entries — chain the takedown to control.',
+      sport: 'bjj',
+    },
+  ];
+
+  for (const s of samples) {
+    await pool.query(
+      `INSERT INTO reels (author_id, video_url, video_kind, caption, sport) VALUES (?, ?, ?, ?, ?)`,
+      [s.authorId, s.videoUrl, s.kind, s.caption, s.sport]
+    );
+  }
+}
 
 async function seedMealLibrary() {
   const [count] = await pool.query('SELECT COUNT(*) AS c FROM meal_library');

@@ -64,7 +64,7 @@ function fmtSeconds(s) {
  * - Tracks playback progress.
  * - Fires onComplete once when the video ends.
  */
-export default function YouTubePlayer({ videoId, onComplete, autoplay = false }) {
+export default function YouTubePlayer({ videoId, onComplete, autoplay = false, compact = false }) {
   const slotRef = useRef(null);
   const playerRef = useRef(null);
   const completedRef = useRef(false);
@@ -196,10 +196,11 @@ export default function YouTubePlayer({ videoId, onComplete, autoplay = false })
   }
 
   return (
-    <div className="yt-wrap">
+    <div className={`yt-wrap ${compact ? 'yt-wrap-compact' : ''}`}>
       <div className="yt-frame">
         <div ref={slotRef} className="yt-slot" />
       </div>
+      {!compact ? (
       <div className="yt-meta">
         <span className={`yt-state yt-state-${state}`}>
           <span className="yt-dot" aria-hidden="true" />
@@ -212,6 +213,7 @@ export default function YouTubePlayer({ videoId, onComplete, autoplay = false })
           {fmtSeconds(time)} / {fmtSeconds(duration)}
         </span>
       </div>
+      ) : null}
     </div>
   );
 }

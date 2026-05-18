@@ -4,6 +4,12 @@
   gap: var(--space-3, 0.75rem);
 }
 
+.yt-wrap-compact {
+  gap: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .yt-frame {
   position: relative;
   width: 100%;

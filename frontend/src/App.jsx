@@ -15,6 +15,7 @@ import CoachHome from './pages/CoachHome';
 import AdminHome from './pages/AdminHome';
 import Profile from './pages/Profile';
 import Friends from './pages/Friends';
+import Reels from './pages/Reels';
 import NotFound from './pages/NotFound';
 
 function AthleteDashboardGate() {
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="/progress" element={<Progress />} />
             <Route path="/meals" element={<Meals />} />
             <Route path="/chat" element={<Chat />} />
+            <Route path="/reels" element={<Reels />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/friends" element={<Friends />} />
             <Route

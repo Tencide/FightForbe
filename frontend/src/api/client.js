@@ -23,6 +23,35 @@ export function buildUrl(path) {
 }
 
 /**
+ * Origin for reel video files. Always hit the API directly in production so
+ * <video> gets proper Range requests and MIME types (Vercel /api proxy breaks some players).
+ */
+export function getMediaBase() {
+  return getUploadBase();
+}
+
+/** Resolve reel media paths (relative /api/...) for <video src> etc. */
+export function resolveMediaUrl(pathOrUrl) {
+  if (!pathOrUrl) return '';
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const base = getMediaBase();
+  if (base) return `${base}${pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`}`;
+  return pathOrUrl;
+}
+
+/**
+ * API origin for large multipart uploads. Vercel's /api proxy limits body size (~4.5 MB),
+ * so uploads go directly to the Fly API in production when no VITE_API_BASE is set.
+ */
+export function getUploadBase() {
+  if (API_BASE) return API_BASE;
+  const envBase = (import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '');
+  if (envBase) return envBase;
+  if (import.meta.env.PROD) return 'https://fightforge-api.fly.dev';
+  return 'http://127.0.0.1:5000';
+}
+
+/**
  * True when this is a production build (e.g. Vercel). Dev server has import.meta.env.DEV.
  */
 function isProdBuild() {
@@ -180,4 +209,54 @@ export async function apiFetch(path, { method = 'GET', body, token } = {}) {
     throw err;
   }
   return data;
+}
+
+/** Ping API so Fly machines wake before a large multipart upload. */
+export async function wakeUploadApi() {
+  const base = getUploadBase();
+  try {
+    await fetch(`${base}/api/health`, { method: 'GET', cache: 'no-store' });
+  } catch {
+    /* ignore */
+  }
+}
+
+export function apiUpload(path, formData, { token, onProgress } = {}) {
+  const base = getUploadBase();
+  const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  const auth = token ?? getToken();
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.setRequestHeader('Accept', 'application/json');
+    if (auth) xhr.setRequestHeader('Authorization', `Bearer ${auth}`);
+
+    xhr.upload.onprogress = (ev) => {
+      if (!onProgress || !ev.lengthComputable) return;
+      onProgress(ev.loaded / ev.total);
+    };
+
+    xhr.onload = () => {
+      let data = null;
+      try {
+        data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+      } catch {
+        data = { error: xhr.responseText };
+      }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        if (onProgress) onProgress(1);
+        resolve(data);
+        return;
+      }
+      const err = new Error(httpErrorMessage({ status: xhr.status, statusText: xhr.statusText }, data));
+      err.status = xhr.status;
+      err.data = data;
+      reject(err);
+    };
+
+    xhr.onerror = () => reject(new Error('Upload failed — check your connection and try again.'));
+    xhr.onabort = () => reject(new Error('Upload cancelled.'));
+    xhr.send(formData);
+  });
 }

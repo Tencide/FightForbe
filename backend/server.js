@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const { UPLOAD_DIR, MEDIA_ROUTE, ensureUploadDir } = require('./lib/reelUploads');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -9,6 +10,7 @@ const mealRoutes = require('./routes/meals');
 const progressRoutes = require('./routes/progress');
 const messageRoutes = require('./routes/messages');
 const friendRoutes = require('./routes/friends');
+const reelRoutes = require('./routes/reels');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,7 +54,21 @@ const corsOptions =
       }
     : { origin: true, credentials: true };
 
+ensureUploadDir();
+
 app.use(cors(corsOptions));
+
+// Reel clips: correct MIME + CORS so <video> works from fightforge.vercel.app
+app.use(MEDIA_ROUTE, (req, res, next) => {
+  const ext = (req.path || '').toLowerCase();
+  if (ext.endsWith('.mp4') || ext.endsWith('.m4v')) res.type('video/mp4');
+  else if (ext.endsWith('.webm')) res.type('video/webm');
+  else if (ext.endsWith('.mov')) res.type('video/mp4'); // encourage players; legacy .mov may still fail
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+app.use(MEDIA_ROUTE, express.static(UPLOAD_DIR, { maxAge: '7d', fallthrough: false }));
 app.use(express.json({ limit: '1mb' }));
 app.use((err, _req, res, next) => {
   if (err.status === 400 && err.type === 'entity.parse.failed') {
@@ -81,6 +97,7 @@ app.use('/api/meals', mealRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/friends', friendRoutes);
+app.use('/api/reels', reelRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });
