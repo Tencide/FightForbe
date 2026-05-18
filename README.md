@@ -1,6 +1,8 @@
 # FightForge
 
-MMA training and nutrition platform — **React** (Vite) frontend, **Node.js + Express** API, and **MySQL**, with role-based access for athletes, coaches, and admins.
+MMA training and nutrition platform — **React** (Vite) frontend, **Node.js + Express** API, and **MySQL**, with role-based access for athletes, coaches, and admins. Includes **Reels** (combat-sports clips: record, upload MP4, or YouTube links).
+
+**Production:** [fightforge.vercel.app](https://fightforge.vercel.app) · API on Fly.io (`fightforge-api.fly.dev`)
 
 **One link for people’s phones (any network, HTTPS):** see **[`docs/SHARE_LINK.md`](docs/SHARE_LINK.md)** — deploy for a stable URL (e.g. **Vercel** + API per **[`docs/VERCEL.md`](docs/VERCEL.md)** / **[`docs/DEPLOY.md`](docs/DEPLOY.md)**), or use a tunnel for a quick shareable link while your PC runs Docker.
 
