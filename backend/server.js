@@ -63,7 +63,7 @@ app.use(MEDIA_ROUTE, (req, res, next) => {
   const ext = (req.path || '').toLowerCase();
   if (ext.endsWith('.mp4') || ext.endsWith('.m4v')) res.type('video/mp4');
   else if (ext.endsWith('.webm')) res.type('video/webm');
-  else if (ext.endsWith('.mov')) res.type('video/mp4'); // encourage players; legacy .mov may still fail
+  else if (ext.endsWith('.mov')) res.type('video/quicktime');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();

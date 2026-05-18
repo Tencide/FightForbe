@@ -5,7 +5,7 @@ const { reelVideoUpload } = require('../middleware/reelUpload');
 const { classifyVideoUrl } = require('../lib/youtube');
 const path = require('path');
 const { publicPathForFilename, deleteUploadedFile, mediaPathForFilename } = require('../lib/reelUploads');
-const { transcodeMovToMp4 } = require('../lib/transcode');
+const { ensurePlaybackMp4 } = require('../lib/transcode');
 
 const router = express.Router();
 
@@ -118,10 +118,8 @@ router.post('/upload', authenticate, reelVideoUpload, async (req, res) => {
 
     let storedName = req.file.filename;
     const diskPath = mediaPathForFilename(storedName);
-    const finalPath = await transcodeMovToMp4(diskPath);
-    if (finalPath !== diskPath) {
-      storedName = path.basename(finalPath);
-    }
+    const finalPath = await ensurePlaybackMp4(diskPath);
+    storedName = path.basename(finalPath);
     const videoUrl = publicPathForFilename(storedName);
 
     const [result] = await pool.query(

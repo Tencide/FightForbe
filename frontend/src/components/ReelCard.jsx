@@ -91,7 +91,7 @@ export default function ReelCard({
               muted={!soundOn}
               loop
               controls={active}
-              preload="metadata"
+              preload="auto"
               onError={() => setVideoError(true)}
             />
           )

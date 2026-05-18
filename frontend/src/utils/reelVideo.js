@@ -39,18 +39,10 @@ export function formatBytes(bytes) {
 
 const COMPRESS_ABOVE_BYTES = 6 * 1024 * 1024;
 
-/** iPhone .mov / HEVC often plays only in Safari — re-encode for other browsers. */
+/** Large files only — server transcodes to H.264 MP4 on upload for playback everywhere. */
 export function needsReelTranscode(blob) {
   if (!blob) return false;
-  const type = (blob.type || '').toLowerCase();
-  const name = (blob.name || '').toLowerCase();
-  if (type.includes('quicktime') || name.endsWith('.mov')) return true;
-  if (type.includes('mp4') && !type.includes('webm') && blob.size <= COMPRESS_ABOVE_BYTES) {
-    return false;
-  }
-  if (type.includes('webm') && blob.size <= COMPRESS_ABOVE_BYTES) return false;
-  if (blob.size > COMPRESS_ABOVE_BYTES) return true;
-  return false;
+  return blob.size > COMPRESS_ABOVE_BYTES;
 }
 
 /**
