@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Avatar from './Avatar';
-import YouTubePlayer from './YouTubePlayer';
+import ReelYouTube from './ReelYouTube';
 import Icon from './Icon';
 import { resolveMediaUrl } from '../api/client';
 import { getYouTubeId } from '../utils/youtube';
@@ -30,6 +30,9 @@ export default function ReelCard({
   const [shareOk, setShareOk] = useState(false);
   const youtubeId = reel.videoKind === 'youtube' ? getYouTubeId(reel.videoUrl) : null;
   const mediaSrc = resolveMediaUrl(reel.videoUrl);
+  const proxySrc =
+    reel.videoUrl && reel.videoUrl.startsWith('/api/') ? reel.videoUrl : null;
+  const [videoSrc, setVideoSrc] = useState('');
   const isDirect = reel.videoKind === 'direct' && !videoError;
 
   useEffect(() => {
@@ -37,7 +40,17 @@ export default function ReelCard({
     setIsPlaying(false);
     setSoundOn(false);
     setShareOk(false);
+    setVideoSrc('');
   }, [reel.id, reel.videoUrl]);
+
+  useEffect(() => {
+    if (!isDirect || !active) {
+      setVideoSrc('');
+      return;
+    }
+    setVideoError(false);
+    setVideoSrc(mediaSrc);
+  }, [isDirect, active, mediaSrc, reel.id]);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -53,7 +66,7 @@ export default function ReelCard({
       el.removeEventListener('pause', onPause);
       el.removeEventListener('ended', onEnded);
     };
-  }, [isDirect, mediaSrc]);
+  }, [isDirect, videoSrc]);
 
   useEffect(() => {
     if (!active) setSoundOn(false);
@@ -69,7 +82,7 @@ export default function ReelCard({
       el.pause();
     }
     return undefined;
-  }, [active, isDirect, soundOn]);
+  }, [active, isDirect, soundOn, videoSrc]);
 
   function togglePlay() {
     const el = videoRef.current;
@@ -100,29 +113,41 @@ export default function ReelCard({
     <article className="reel-slide" data-active={active ? 'true' : 'false'}>
       <div className="reel-media">
         {youtubeId ? (
-          <YouTubePlayer videoId={youtubeId} autoplay={active} compact />
+          <ReelYouTube videoUrl={reel.videoUrl} caption={reel.caption} />
         ) : reel.videoKind === 'direct' ? (
           videoError ? (
             <div className="reel-link-fallback">
               <Icon name="video" size={32} />
-              <p className="muted">Clip format not supported in this browser.</p>
-              <a href={mediaSrc} target="_blank" rel="noopener noreferrer" className="btn btn-subtle btn-sm">
+              <p className="muted">Couldn&apos;t load this clip.</p>
+              <a href={mediaSrc || proxySrc} target="_blank" rel="noopener noreferrer" className="btn btn-subtle btn-sm">
                 Open video
               </a>
             </div>
           ) : (
             <div className="reel-video-wrap">
-              <video
-                ref={videoRef}
-                className="reel-video-native"
-                src={mediaSrc}
-                playsInline
-                muted={!soundOn}
-                loop
-                preload="auto"
-                onClick={togglePlay}
-                onError={() => setVideoError(true)}
-              />
+              {videoSrc ? (
+                <video
+                  ref={videoRef}
+                  className="reel-video-native"
+                  src={videoSrc}
+                  playsInline
+                  muted={!soundOn}
+                  loop
+                  preload="metadata"
+                  onClick={togglePlay}
+                  onError={(e) => {
+                    const code = e.currentTarget?.error?.code;
+                    if (code === 1) return;
+                    if (videoSrc === mediaSrc && proxySrc && mediaSrc !== proxySrc) {
+                      setVideoSrc(proxySrc);
+                      return;
+                    }
+                    setVideoError(true);
+                  }}
+                />
+              ) : (
+                <p className="reel-video-loading muted">Loading clip…</p>
+              )}
               <button
                 type="button"
                 className={`reel-play-btn ${isPlaying ? 'is-hidden' : ''}`}

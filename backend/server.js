@@ -56,19 +56,30 @@ const corsOptions =
 
 ensureUploadDir();
 
-app.use(cors(corsOptions));
-
-// Reel clips: correct MIME + CORS so <video> works from fightforge.vercel.app
+// Reel media before CORS — avoid Access-Control-Allow-Credentials + * (breaks <video>)
 app.use(MEDIA_ROUTE, (req, res, next) => {
   const ext = (req.path || '').toLowerCase();
   if (ext.endsWith('.mp4') || ext.endsWith('.m4v')) res.type('video/mp4');
   else if (ext.endsWith('.webm')) res.type('video/webm');
   else if (ext.endsWith('.mov')) res.type('video/quicktime');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  if (origin && (!IS_PROD || !allowedOrigins.length || allowedOrigins.includes(origin))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    return res.status(204).end();
+  }
   next();
 });
 app.use(MEDIA_ROUTE, express.static(UPLOAD_DIR, { maxAge: '7d', fallthrough: false }));
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use((err, _req, res, next) => {
   if (err.status === 400 && err.type === 'entity.parse.failed') {

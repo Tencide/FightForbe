@@ -225,12 +225,54 @@
   border-radius: 0;
 }
 
+.reel-youtube {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.reel-youtube-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.85;
+}
+
+.reel-youtube-thumb-empty {
+  background: linear-gradient(160deg, #1a1d24 0%, #0d0f12 100%);
+}
+
+.reel-youtube-play {
+  flex-direction: column;
+  gap: 0.35rem;
+  width: auto;
+  min-width: 4.25rem;
+  height: auto;
+  padding: 0.85rem 1.1rem;
+  padding-left: 1.1rem;
+  border-radius: var(--r-lg);
+}
+
+.reel-youtube-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .reel-video-wrap {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.reel-video-loading {
+  margin: 0;
+  font-size: 0.85rem;
 }
 
 .reel-video-native {
