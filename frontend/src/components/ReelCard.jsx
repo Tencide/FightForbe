@@ -25,6 +25,7 @@ export default function ReelCard({
 }) {
   const videoRef = useRef(null);
   const [videoError, setVideoError] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const [shareOk, setShareOk] = useState(false);
   const youtubeId = reel.videoKind === 'youtube' ? getYouTubeId(reel.videoUrl) : null;
@@ -33,9 +34,26 @@ export default function ReelCard({
 
   useEffect(() => {
     setVideoError(false);
+    setIsPlaying(false);
     setSoundOn(false);
     setShareOk(false);
   }, [reel.id, reel.videoUrl]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !isDirect) return undefined;
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onEnded = () => setIsPlaying(false);
+    el.addEventListener('play', onPlay);
+    el.addEventListener('pause', onPause);
+    el.addEventListener('ended', onEnded);
+    return () => {
+      el.removeEventListener('play', onPlay);
+      el.removeEventListener('pause', onPause);
+      el.removeEventListener('ended', onEnded);
+    };
+  }, [isDirect, mediaSrc]);
 
   useEffect(() => {
     if (!active) setSoundOn(false);
@@ -52,6 +70,16 @@ export default function ReelCard({
     }
     return undefined;
   }, [active, isDirect, soundOn]);
+
+  function togglePlay() {
+    const el = videoRef.current;
+    if (!el) return;
+    if (el.paused) {
+      el.play().catch(() => {});
+    } else {
+      el.pause();
+    }
+  }
 
   async function handleShare() {
     const url = `${window.location.origin}/reels?reel=${reel.id}`;
@@ -83,17 +111,27 @@ export default function ReelCard({
               </a>
             </div>
           ) : (
-            <video
-              ref={videoRef}
-              className="reel-video-native"
-              src={mediaSrc}
-              playsInline
-              muted={!soundOn}
-              loop
-              controls={active}
-              preload="auto"
-              onError={() => setVideoError(true)}
-            />
+            <div className="reel-video-wrap">
+              <video
+                ref={videoRef}
+                className="reel-video-native"
+                src={mediaSrc}
+                playsInline
+                muted={!soundOn}
+                loop
+                preload="auto"
+                onClick={togglePlay}
+                onError={() => setVideoError(true)}
+              />
+              <button
+                type="button"
+                className={`reel-play-btn ${isPlaying ? 'is-hidden' : ''}`}
+                onClick={togglePlay}
+                aria-label="Play video"
+              >
+                <Icon name="play" size={32} />
+              </button>
+            </div>
           )
         ) : (
           <div className="reel-link-fallback">

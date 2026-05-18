@@ -190,6 +190,17 @@ const ICONS = {
       <line x1="12" x2="12" y1="2" y2="15" />
     </>
   ),
+  play: (
+    <>
+      <polygon points="5 3 19 12 5 21 5 3" />
+    </>
+  ),
+  pause: (
+    <>
+      <rect x="6" y="4" width="4" height="16" />
+      <rect x="14" y="4" width="4" height="16" />
+    </>
+  ),
   refresh: (
     <>
       <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
