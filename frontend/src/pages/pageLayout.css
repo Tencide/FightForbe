@@ -558,6 +558,48 @@ a.card:hover {
   .page-title {
     font-size: 1.4rem;
   }
+  .page-header.with-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .spread {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .card-grid,
+  .card-grid-md {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    padding: var(--s-4);
+  }
+  .btn {
+    min-height: 44px;
+  }
+  .cluster .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  .form,
+  .form-card {
+    max-width: none;
+  }
+  .input,
+  .select,
+  .textarea {
+    font-size: 16px;
+  }
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tab {
+    flex-shrink: 0;
+  }
 }
 
 /* ---------- Animations ---------- */

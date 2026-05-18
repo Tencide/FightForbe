@@ -313,13 +313,21 @@
   .chat {
     grid-template-columns: 1fr;
     min-height: 0;
+    height: auto;
   }
   .chat-sidebar {
     border-right: none;
     border-bottom: 1px solid var(--border);
-    max-height: 280px;
+    max-height: min(36vh, 280px);
   }
   .chat-messages {
-    max-height: 50vh;
+    min-height: 40vh;
+    max-height: none;
+  }
+  .chat-composer {
+    padding-bottom: max(var(--s-2), env(safe-area-inset-bottom));
+  }
+  .chat-composer .input {
+    font-size: 16px;
   }
 }

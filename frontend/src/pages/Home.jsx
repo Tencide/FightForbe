@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Icon from '../components/Icon';
-import { SHOW_DEMO_ACCOUNTS } from '../config';
 import './pageLayout.css';
 import './Home.css';
 
@@ -26,12 +25,6 @@ const FEATURES = [
     title: 'Direct line to your coach',
     body: 'Built-in messaging — questions and form checks without leaving the platform.',
   },
-];
-
-const STATS = [
-  { value: '3', label: 'Roles', sub: 'Athlete · Coach · Admin' },
-  { value: '5', label: 'Modules', sub: 'Workouts · Meals · Progress · Chat · Users' },
-  { value: 'JWT', label: 'Auth', sub: 'Token-based, role-aware' },
 ];
 
 function postLoginPath(role) {
@@ -77,7 +70,7 @@ export default function Home() {
         </h1>
         <p className="home-lead">
           MMA training, nutrition, and progress tracking built for athletes and the coaches who push
-          them. A class-built full-stack platform — React, Node, MySQL — wired end-to-end.
+          them.
         </p>
 
         <div className="cluster" style={{ marginTop: 'var(--s-3)' }}>
@@ -103,16 +96,6 @@ export default function Home() {
             </>
           )}
         </div>
-
-        <ul className="home-stats">
-          {STATS.map((s) => (
-            <li key={s.label}>
-              <span className="home-stat-value">{s.value}</span>
-              <span className="home-stat-label">{s.label}</span>
-              <span className="home-stat-sub">{s.sub}</span>
-            </li>
-          ))}
-        </ul>
       </section>
 
       <section className="home-features">
@@ -120,7 +103,7 @@ export default function Home() {
           <h2 className="page-title" style={{ fontSize: '1.4rem' }}>
             Everything you need to run a fight camp
           </h2>
-          <span className="muted">Open source · train smarter, cut cleaner, stay connected</span>
+          <span className="muted home-features-tag">Train smarter, cut cleaner, stay connected</span>
         </div>
         <div className="card-grid-md" style={{ marginTop: 'var(--s-4)' }}>
           {FEATURES.map((f) => (
@@ -135,34 +118,23 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-cta card">
-        <div>
-          <h2 className="section-title" style={{ fontSize: '1.15rem' }}>
-            {SHOW_DEMO_ACCOUNTS ? 'Try sample accounts (local only)' : 'Ready to start training?'}
-          </h2>
-          <p className="muted" style={{ marginTop: 'var(--s-1)' }}>
-            {SHOW_DEMO_ACCOUNTS ? (
-              <>
-                Password <span className="mono">Password123!</span> on{' '}
-                <span className="mono">athlete@fightforge.test</span>,{' '}
-                <span className="mono">coach@fightforge.test</span>, or{' '}
-                <span className="mono">admin@fightforge.test</span>.
-              </>
-            ) : (
-              <>
-                Create a free account and start tracking workouts, meals, and progress today.
-                Friends, leaderboards, and a curated MMA workout library are all included.
-              </>
-            )}
-          </p>
-        </div>
-        {!isAuthenticated ? (
-          <Link to={SHOW_DEMO_ACCOUNTS ? '/login' : '/signup'} className="btn btn-subtle">
-            {SHOW_DEMO_ACCOUNTS ? 'Take the tour' : 'Create account'}
+      {!isAuthenticated ? (
+        <section className="home-cta card">
+          <div>
+            <h2 className="section-title" style={{ fontSize: '1.15rem' }}>
+              Ready to start training?
+            </h2>
+            <p className="muted" style={{ marginTop: 'var(--s-1)' }}>
+              Create your account to log workouts, meals, and progress — and stay in sync with your
+              coach from one place.
+            </p>
+          </div>
+          <Link to="/signup" className="btn btn-subtle">
+            Get started
             <Icon name="chevronRight" size={16} />
           </Link>
-        ) : null}
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }

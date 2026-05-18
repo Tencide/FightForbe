@@ -2,33 +2,44 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Avatar from './Avatar';
+import Icon from './Icon';
 import styles from './AppShell.module.css';
 
 const ATHLETE_NAV = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/workouts', label: 'Workouts' },
-  { to: '/progress', label: 'Progress' },
-  { to: '/meals', label: 'Meals' },
-  { to: '/friends', label: 'Friends' },
-  { to: '/chat', label: 'Chat' },
+  { to: '/dashboard', label: 'Dashboard', mobileLabel: 'Home', icon: 'home' },
+  { to: '/workouts', label: 'Workouts', mobileLabel: 'Train', icon: 'dumbbell' },
+  { to: '/progress', label: 'Progress', icon: 'trending' },
+  { to: '/meals', label: 'Meals', icon: 'apple' },
+  { to: '/reels', label: 'Reels', icon: 'video' },
+  { to: '/friends', label: 'Friends', icon: 'users' },
+  { to: '/chat', label: 'Chat', icon: 'message' },
 ];
 
 const COACH_NAV = [
-  { to: '/coach', label: 'Athletes' },
-  { to: '/workouts', label: 'Workouts' },
-  { to: '/meals', label: 'Meals' },
-  { to: '/progress', label: 'Progress' },
-  { to: '/friends', label: 'Friends' },
-  { to: '/chat', label: 'Chat' },
+  { to: '/coach', label: 'Athletes', mobileLabel: 'Athletes', icon: 'users' },
+  { to: '/workouts', label: 'Workouts', mobileLabel: 'Train', icon: 'dumbbell' },
+  { to: '/meals', label: 'Meals', icon: 'apple' },
+  { to: '/progress', label: 'Progress', icon: 'trending' },
+  { to: '/reels', label: 'Reels', icon: 'video' },
+  { to: '/friends', label: 'Friends', icon: 'users' },
+  { to: '/chat', label: 'Chat', icon: 'message' },
 ];
 
 const ADMIN_NAV = [
-  { to: '/admin', label: 'Admin' },
-  { to: '/workouts', label: 'Workouts' },
-  { to: '/meals', label: 'Meals' },
-  { to: '/progress', label: 'Progress' },
-  { to: '/friends', label: 'Friends' },
+  { to: '/admin', label: 'Admin', mobileLabel: 'Admin', icon: 'grid' },
+  { to: '/workouts', label: 'Workouts', mobileLabel: 'Train', icon: 'dumbbell' },
+  { to: '/meals', label: 'Meals', icon: 'apple' },
+  { to: '/progress', label: 'Progress', icon: 'trending' },
+  { to: '/reels', label: 'Reels', icon: 'video' },
+  { to: '/friends', label: 'Friends', icon: 'users' },
+  { to: '/chat', label: 'Chat', icon: 'message' },
 ];
+
+const MOBILE_TAB_PATHS = {
+  athlete: ['/dashboard', '/workouts', '/reels', '/chat', '/profile'],
+  coach: ['/coach', '/workouts', '/reels', '/chat', '/profile'],
+  admin: ['/admin', '/workouts', '/reels', '/chat', '/profile'],
+};
 
 function navForRole(role) {
   if (role === 'athlete') return ATHLETE_NAV;
@@ -42,6 +53,15 @@ function roleHomePath(role) {
   if (role === 'coach') return '/coach';
   if (role === 'admin') return '/admin';
   return '/';
+}
+
+function mobileTabs(role, items) {
+  const paths = MOBILE_TAB_PATHS[role] || [];
+  const tabs = paths
+    .map((path) => items.find((item) => item.to === path))
+    .filter(Boolean);
+  tabs.push({ to: '/profile', label: 'Profile', mobileLabel: 'You', icon: 'user' });
+  return tabs;
 }
 
 function BrandMark() {
@@ -64,9 +84,6 @@ function BrandMark() {
   );
 }
 
-// The shared Avatar component renders the user's uploaded photo or a
-// colored initials fallback when they haven't set one yet.
-
 export function AppShell() {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -78,12 +95,16 @@ export function AppShell() {
 
   const items = navForRole(user?.role);
   const home = roleHomePath(user?.role);
+  const tabs = mobileTabs(user?.role, items);
+  const tabPaths = new Set(tabs.map((t) => t.to));
+  const moreItems = items.filter((item) => !tabPaths.has(item.to));
+
   const roleBadgeClass =
     user?.role === 'coach'
       ? 'badge-coach'
       : user?.role === 'admin'
-      ? 'badge-admin'
-      : 'badge-athlete';
+        ? 'badge-admin'
+        : 'badge-athlete';
 
   return (
     <div className={styles.shell}>
@@ -106,7 +127,7 @@ export function AppShell() {
             <span className={styles.menuBar} data-state={open ? 'open' : 'closed'} />
           </button>
 
-          <nav className={`${styles.nav} ${open ? styles.navOpen : ''}`}>
+          <nav className={`${styles.nav} ${open ? styles.navOpen : ''}`} aria-label="Main">
             {items.map((item) => (
               <NavLink
                 key={item.to}
@@ -160,6 +181,22 @@ export function AppShell() {
               <span className="hidden-sm">Log out</span>
             </button>
           </div>
+
+          {moreItems.length > 0 && open ? (
+            <nav className={styles.moreNav} aria-label="More">
+              {moreItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+          ) : null}
         </div>
       </header>
 
@@ -168,6 +205,22 @@ export function AppShell() {
           <Outlet />
         </div>
       </main>
+
+      <nav className={styles.bottomNav} aria-label="Primary">
+        {tabs.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `${styles.bottomTab} ${isActive ? styles.bottomTabActive : ''}`
+            }
+            end={item.to === home || item.to === '/profile'}
+          >
+            <Icon name={item.icon} size={20} />
+            <span>{item.mobileLabel || item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
 
       <footer className={styles.footer}>
         <span>FightForge</span>

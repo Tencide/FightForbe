@@ -98,6 +98,7 @@ body {
   font-size: 15px;
   line-height: 1.55;
   color: var(--text);
+  overflow-x: hidden;
   background: var(--bg-0);
   background-image:
     radial-gradient(1100px 600px at 8% -20%, rgba(244, 185, 66, 0.08) 0%, transparent 55%),

@@ -143,3 +143,26 @@
   text-align: center;
   font-size: 0.9rem;
 }
+
+@media (max-width: 640px) {
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .modal-panel {
+    width: 100%;
+    max-width: none;
+    max-height: min(92dvh, 100%);
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    margin: 0;
+  }
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-left: max(var(--s-4), env(safe-area-inset-left));
+    padding-right: max(var(--s-4), env(safe-area-inset-right));
+  }
+  .modal-footer {
+    padding-bottom: max(var(--s-4), env(safe-area-inset-bottom));
+  }
+}
