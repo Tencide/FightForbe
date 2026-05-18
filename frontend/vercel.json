@@ -7,6 +7,10 @@
   "installCommand": "npm ci",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://fightforge-api.fly.dev/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

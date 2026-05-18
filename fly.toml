@@ -1,0 +1,36 @@
+# FightForge API — deploy from repo root (Fly GitHub / flyctl deploy).
+# Build context is backend/ (directory containing the Dockerfile).
+# CLI from backend only: flyctl deploy --config fly.toml --primary-region iad
+
+app = "fightforge-api"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  REELS_UPLOAD_DIR = "/data/reels"
+
+[mounts]
+  source = "reels_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 5000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "15s"
+  method = "GET"
+  path = "/api/health"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

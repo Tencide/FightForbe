@@ -1,0 +1,11 @@
+.git
+.gitignore
+frontend
+backend/node_modules
+backend/.env
+backend/.env.fly
+backend/hello-fly
+**/*.md
+figures
+docs
+TECHNICAL_REPORT.*
